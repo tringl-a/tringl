@@ -1,7 +1,7 @@
 // Service Worker – App-Shell-Cache für das Trading Journal.
 // Alle Daten liegen in localStorage; hier werden nur die statischen Dateien gecacht.
 // Bei Änderungen an index.html o. Ä. CACHE_VERSION erhöhen.
-const CACHE_VERSION = "tj-v1.5.0";
+const CACHE_VERSION = "tj-v1.5.1";
 const APP_SHELL = [
   "./",
   "./index.html",

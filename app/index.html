@@ -1305,7 +1305,9 @@
   document.getElementById("calNext").addEventListener("click", () => { calMonth += 1; if (calMonth > 11) { calMonth = 0; calYear += 1; } renderCalendar(); });
 
   document.getElementById("exportJsonBtn").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(entries, null, 2)], { type: "application/json" });
+    // Backup-Format v2: Trades + Regeln + Tageslimit (Import versteht auch das alte reine Trade-Array)
+    const backup = { app: "trading-journal", version: 2, exportedAt: new Date().toISOString(), entries, rules, riskLimit };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = `trading-journal-backup-${todayStr()}.json`;
@@ -1335,12 +1337,23 @@
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const imported = JSON.parse(evt.target.result);
-        if (!Array.isArray(imported)) throw new Error("invalid format");
+        const data = JSON.parse(evt.target.result);
+        // Altes Format: reines Trade-Array; neues Format: { entries, rules, riskLimit }
+        const importedEntries = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : null);
+        if (!importedEntries) throw new Error("invalid format");
         const existingIds = new Set(entries.map(x => x.id));
         const merged = [...entries];
-        imported.forEach(item => { if (item && item.id && !existingIds.has(item.id)) merged.push(item); });
+        importedEntries.forEach(item => { if (item && item.id && !existingIds.has(item.id)) merged.push(item); });
         saveEntries(merged);
+        if (!Array.isArray(data)) {
+          if (Array.isArray(data.rules)) {
+            const ruleIds = new Set(rules.map(r => r.id));
+            const newRules = data.rules.filter(r => r && r.id && r.name && !ruleIds.has(r.id));
+            if (newRules.length) saveRules([...rules, ...newRules]);
+          }
+          const importedLimit = parseFloat(data.riskLimit);
+          if ((riskLimit === null || isNaN(riskLimit)) && importedLimit > 0) saveRiskLimit(importedLimit);
+        }
         renderAll();
       } catch (err) { alert("Import fehlgeschlagen: Datei ist kein gültiges Journal-Backup."); }
       e.target.value = "";

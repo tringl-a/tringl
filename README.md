@@ -6,9 +6,11 @@ Läuft als Desktop-App (Electron) **und** als installierbare Web-App (PWA) auf d
 - **Kein Server, keine Cloud, kein Login.** Alle Daten liegen im `localStorage` des jeweiligen Geräts/Browsers.
 - **Kein automatischer Sync.** Desktop und Handy haben jeweils eigene Daten.
   Übertragung nur manuell: **JSON-Backup** auf Gerät A → Datei auf Gerät B → **Importieren**
-  (der Import fügt nur Trades hinzu, deren ID noch nicht existiert).
-- Das JSON-Backup enthält die **Trades** (inkl. Fotos). Regeln/Strategien und das Tagesverlust-Limit
-  sind nicht im Backup und müssen pro Gerät eingerichtet werden.
+- Das JSON-Backup enthält **Trades (inkl. Fotos), Regeln/Strategien und das Tagesverlust-Limit**.
+  Der Import fügt nur Trades/Regeln hinzu, deren ID noch nicht existiert (nichts wird doppelt oder
+  überschrieben); das Limit wird nur übernommen, wenn auf dem Gerät noch keins gesetzt ist.
+  Alte Backups (nur Trades) lassen sich weiterhin importieren. Das neue Format kann aber nur die
+  neue App-Version (ab 1.5.0) lesen – also auch die Desktop-App neu bauen.
 
 ```
 app/
