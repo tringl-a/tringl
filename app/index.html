@@ -11,6 +11,19 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Journal">
 <link rel="manifest" href="manifest.json">
+<script>
+  // Design-Einstellungen vor dem ersten Rendern anwenden (kein Aufblitzen)
+  (function () {
+    try {
+      var st = JSON.parse(localStorage.getItem("trading_journal_settings_v1") || "{}");
+      var t = st.theme || "dark";
+      var dark = t === "system" ? window.matchMedia("(prefers-color-scheme: dark)").matches : t !== "light";
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+      document.documentElement.dataset.accent = st.accent || "gold";
+      document.documentElement.style.setProperty("--fs", { small: 0.9, normal: 1, large: 1.12 }[st.fontSize] || 1);
+    } catch (e) {}
+  })();
+</script>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
@@ -31,7 +44,49 @@
     --red-dim: #4A2226;
     --amber: #E0A957;
     --amber-dim: #4A3B1E;
+    --on-accent: #0B0F14;
+    --input-bg: #0F141A;
+    --row-border: #161B22;
+    --chip-bg: #1A2029;
+    --win-border: #2C6B50;
+    --loss-border: #7A3336;
+    --border-hover: #3A4450;
+    --banner-text: #F3C6C8;
+    --overlay: rgba(6,8,10,0.85);
+    --accent-soft: color-mix(in srgb, var(--gold) 12%, transparent);
+    color-scheme: dark;
   }
+  :root[data-theme="light"] {
+    --bg: #F4F6F9;
+    --panel: #FFFFFF;
+    --border: #E2E6EB;
+    --border2: #D3D9E0;
+    --text: #12171D;
+    --text-dim: #364049;
+    --text-mute: #66717C;
+    --text-faint: #98A2AC;
+    --green: #1E9466;
+    --green-dim: #DCF2E8;
+    --red: #D24646;
+    --red-dim: #FBE4E4;
+    --amber: #B87A12;
+    --amber-dim: #FAEED6;
+    --input-bg: #FFFFFF;
+    --row-border: #EEF1F4;
+    --chip-bg: #EEF1F4;
+    --win-border: #A3D9C1;
+    --loss-border: #EFB1B1;
+    --border-hover: #AEB7C1;
+    --banner-text: #8A2328;
+    --overlay: rgba(20,26,33,0.55);
+    color-scheme: light;
+  }
+  :root[data-accent="blue"]   { --gold: #4C8FE8; --gold-hover: #6AA3EE; --on-accent: #FFFFFF; }
+  :root[data-accent="violet"] { --gold: #8C6CF0; --gold-hover: #A189F3; --on-accent: #FFFFFF; }
+  :root[data-accent="green"]  { --gold: #3FB68B; --gold-hover: #57C79D; --on-accent: #0B0F14; }
+  :root[data-accent="cyan"]   { --gold: #35B3C8; --gold-hover: #55C3D5; --on-accent: #0B0F14; }
+  :root[data-accent="rose"]   { --gold: #E2669B; --gold-hover: #E983AF; --on-accent: #0B0F14; }
+  :root[data-theme="light"][data-accent="gold"], :root[data-theme="light"]:not([data-accent]) { --gold: #B8862A; --gold-hover: #C99637; --on-accent: #FFFFFF; }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -42,68 +97,68 @@
   }
   #app { max-width: 960px; margin: 0 auto; padding: 32px 24px 60px; }
   .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
-  .eyebrow { font-size: 11px; letter-spacing: 0.12em; color: var(--text-mute); text-transform: uppercase; margin-bottom: 4px; }
-  .total-pnl { font-size: 26px; font-weight: 700; font-family: 'Consolas', 'JetBrains Mono', monospace; }
+  .eyebrow { font-size: calc(11px * var(--fs, 1)); letter-spacing: 0.12em; color: var(--text-mute); text-transform: uppercase; margin-bottom: 4px; }
+  .total-pnl { font-size: calc(26px * var(--fs, 1)); font-weight: 700; font-family: 'Consolas', 'JetBrains Mono', monospace; }
   .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .btn { background: var(--gold); color: var(--bg); border: none; border-radius: 6px; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn { background: var(--gold); color: var(--on-accent); border: none; border-radius: 6px; padding: 10px 18px; font-size: calc(13px * var(--fs, 1)); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
   .btn:hover { background: var(--gold-hover); }
-  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border2); border-radius: 6px; padding: 10px 18px; font-size: 13px; cursor: pointer; }
-  .btn-ghost:hover { border-color: #3A4450; }
-  .btn-sm { padding: 6px 10px; font-size: 12px; }
+  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border2); border-radius: 6px; padding: 10px 18px; font-size: calc(13px * var(--fs, 1)); cursor: pointer; }
+  .btn-ghost:hover { border-color: var(--border-hover); }
+  .btn-sm { padding: 6px 10px; font-size: calc(12px * var(--fs, 1)); }
   .btn-icon { background: none; border: none; color: var(--text-faint); cursor: pointer; padding: 4px; display: flex; }
   .btn-icon:hover { color: var(--red); }
 
-  #storageBanner { display: none; background: var(--red-dim); border: 1px solid var(--red); color: #F3C6C8; border-radius: 6px; padding: 10px 14px; font-size: 12px; margin-bottom: 14px; }
+  #storageBanner { display: none; background: var(--red-dim); border: 1px solid var(--red); color: var(--banner-text); border-radius: 6px; padding: 10px 14px; font-size: calc(12px * var(--fs, 1)); margin-bottom: 14px; }
 
   .riskbar-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; }
-  .riskbar-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 8px; }
+  .riskbar-top { display: flex; justify-content: space-between; align-items: center; font-size: calc(12px * var(--fs, 1)); margin-bottom: 8px; }
   .riskbar-label { color: var(--text-mute); }
   .riskbar-value { font-family: 'Consolas', monospace; font-weight: 600; }
-  .riskbar-track { height: 8px; border-radius: 4px; background: #0F141A; overflow: hidden; }
+  .riskbar-track { height: 8px; border-radius: 4px; background: var(--input-bg); overflow: hidden; }
   .riskbar-fill { height: 100%; border-radius: 4px; transition: width 0.25s ease; }
-  .riskbar-msg { font-size: 11px; margin-top: 7px; }
+  .riskbar-msg { font-size: calc(11px * var(--fs, 1)); margin-top: 7px; }
   .risk-edit-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
   .risk-edit-row input { max-width: 140px; }
-  .risk-set-link { background: none; border: none; color: var(--text-mute); font-size: 11px; text-decoration: underline; cursor: pointer; padding: 0; }
+  .risk-set-link { background: none; border: none; color: var(--text-mute); font-size: calc(11px * var(--fs, 1)); text-decoration: underline; cursor: pointer; padding: 0; }
   .risk-set-link:hover { color: var(--gold); }
 
   .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
-  .tab-btn { background: none; border: none; color: var(--text-mute); padding: 10px 4px; margin-right: 20px; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
+  .tab-btn { background: none; border: none; color: var(--text-mute); padding: 10px 4px; margin-right: 20px; font-size: calc(13px * var(--fs, 1)); font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
   .tab-btn.active { color: var(--text); border-bottom-color: var(--gold); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
   .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
   .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
-  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 6px; }
-  .stat-value { font-size: 17px; font-weight: 600; font-family: 'Consolas', 'JetBrains Mono', monospace; }
+  .stat-label { font-size: calc(10px * var(--fs, 1)); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 6px; }
+  .stat-value { font-size: calc(17px * var(--fs, 1)); font-weight: 600; font-family: 'Consolas', 'JetBrains Mono', monospace; }
 
   .form-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 22px; display: none; }
   .form-panel.open { display: block; }
   .form-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-  label.field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 5px; display: block; }
-  input, select, textarea { background: #0F141A; border: 1px solid var(--border2); border-radius: 6px; color: var(--text); padding: 9px 10px; font-size: 13px; font-family: inherit; outline: none; width: 100%; }
+  label.field-label { font-size: calc(11px * var(--fs, 1)); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 5px; display: block; }
+  input, select, textarea { background: var(--input-bg); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); padding: 9px 10px; font-size: calc(13px * var(--fs, 1)); font-family: inherit; outline: none; width: 100%; }
   input:focus, select:focus, textarea:focus { border-color: var(--gold); }
   textarea { resize: vertical; }
   ::placeholder { color: var(--text-faint); }
 
-  .radio-row { display: flex; gap: 18px; margin-bottom: 12px; font-size: 12px; }
+  .radio-row { display: flex; gap: 18px; margin-bottom: 12px; font-size: calc(12px * var(--fs, 1)); }
   .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-dim); }
-  .preview { font-size: 12px; color: var(--text-mute); margin-bottom: 12px; }
+  .preview { font-size: calc(12px * var(--fs, 1)); color: var(--text-mute); margin-bottom: 12px; }
   .preview b { font-family: 'Consolas', monospace; }
-  .error-msg { color: var(--red); font-size: 12px; margin-bottom: 12px; }
+  .error-msg { color: var(--red); font-size: calc(12px * var(--fs, 1)); margin-bottom: 12px; }
   .form-actions { display: flex; gap: 8px; }
 
-  .empty-state { text-align: center; padding: 50px 0; color: var(--text-faint); font-size: 13px; }
+  .empty-state { text-align: center; padding: 50px 0; color: var(--text-faint); font-size: calc(13px * var(--fs, 1)); }
 
   .filter-row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
-  .tag-chip { background: var(--panel); border: 1px solid var(--border2); color: var(--text-dim); border-radius: 999px; padding: 5px 12px; font-size: 11px; cursor: pointer; }
-  .tag-chip.active { border-color: var(--gold); color: var(--gold); background: #1D1A11; }
+  .tag-chip { background: var(--panel); border: 1px solid var(--border2); color: var(--text-dim); border-radius: 999px; padding: 5px 12px; font-size: calc(11px * var(--fs, 1)); cursor: pointer; }
+  .tag-chip.active { border-color: var(--gold); color: var(--gold); background: var(--accent-soft); }
 
   table { width: 100%; border-collapse: collapse; }
   .table-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-  thead th { text-align: left; padding: 10px 14px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); border-bottom: 1px solid var(--border); font-weight: 500; }
-  tbody td { padding: 10px 14px; font-size: 12px; border-bottom: 1px solid #161B22; vertical-align: middle; }
+  thead th { text-align: left; padding: 10px 14px; font-size: calc(10px * var(--fs, 1)); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); border-bottom: 1px solid var(--border); font-weight: 500; }
+  tbody td { padding: 10px 14px; font-size: calc(12px * var(--fs, 1)); border-bottom: 1px solid var(--row-border); vertical-align: middle; }
   tbody tr:hover { background: var(--panel); }
   tbody tr:last-child td { border-bottom: none; }
   .mono { font-family: 'Consolas', 'JetBrains Mono', monospace; }
@@ -112,89 +167,133 @@
   .pnl-pos { color: var(--green); font-weight: 600; }
   .pnl-neg { color: var(--red); font-weight: 600; }
   .notes-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-mute); }
-  .tag-pill { display: inline-block; background: #1A2029; border: 1px solid var(--border2); color: var(--text-mute); border-radius: 999px; padding: 2px 8px; font-size: 10px; }
+  .tag-pill { display: inline-block; background: var(--chip-bg); border: 1px solid var(--border2); color: var(--text-mute); border-radius: 999px; padding: 2px 8px; font-size: calc(10px * var(--fs, 1)); }
 
   .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
   .cal-nav { display: flex; align-items: center; gap: 12px; }
-  .cal-nav button { background: var(--panel); border: 1px solid var(--border2); color: var(--text-dim); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-size: 14px; }
+  .cal-nav button { background: var(--panel); border: 1px solid var(--border2); color: var(--text-dim); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-size: calc(14px * var(--fs, 1)); }
   .cal-nav button:hover { border-color: var(--gold); color: var(--gold); }
-  .cal-month-label { font-size: 15px; font-weight: 700; min-width: 160px; text-align: center; }
-  .cal-month-total { font-family: 'Consolas', monospace; font-size: 13px; font-weight: 600; }
+  .cal-month-label { font-size: calc(15px * var(--fs, 1)); font-weight: 700; min-width: 160px; text-align: center; }
+  .cal-month-total { font-family: 'Consolas', monospace; font-size: calc(13px * var(--fs, 1)); font-weight: 600; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-  .cal-dow { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); text-align: center; padding-bottom: 4px; }
+  .cal-dow { font-size: calc(10px * var(--fs, 1)); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); text-align: center; padding-bottom: 4px; }
   .cal-cell { aspect-ratio: 1 / 0.85; border-radius: 7px; border: 1px solid var(--border); background: var(--panel); padding: 6px 7px; position: relative; }
   .cal-cell.empty { background: transparent; border-color: transparent; }
-  .cal-cell.win { background: var(--green-dim); border-color: #2C6B50; }
-  .cal-cell.loss { background: var(--red-dim); border-color: #7A3336; }
-  .cal-cell.flat { background: #1A2029; border-color: var(--border2); }
-  .cal-daynum { font-size: 11px; color: var(--text-mute); }
+  .cal-cell.win { background: var(--green-dim); border-color: var(--win-border); }
+  .cal-cell.loss { background: var(--red-dim); border-color: var(--loss-border); }
+  .cal-cell.flat { background: var(--chip-bg); border-color: var(--border2); }
+  .cal-daynum { font-size: calc(11px * var(--fs, 1)); color: var(--text-mute); }
   .cal-cell.win .cal-daynum, .cal-cell.loss .cal-daynum { color: var(--text-dim); }
-  .cal-pnl { font-family: 'Consolas', monospace; font-size: 11px; font-weight: 700; margin-top: 4px; }
+  .cal-pnl { font-family: 'Consolas', monospace; font-size: calc(11px * var(--fs, 1)); font-weight: 700; margin-top: 4px; }
   .cal-cell.win .cal-pnl { color: var(--green); }
   .cal-cell.loss .cal-pnl { color: var(--red); }
-  .cal-trades { font-size: 9px; color: var(--text-faint); margin-top: 2px; }
-  .cal-legend { display: flex; gap: 16px; margin-top: 16px; font-size: 11px; color: var(--text-mute); align-items: center; }
+  .cal-trades { font-size: calc(9px * var(--fs, 1)); color: var(--text-faint); margin-top: 2px; }
+  .cal-legend { display: flex; gap: 16px; margin-top: 16px; font-size: calc(11px * var(--fs, 1)); color: var(--text-mute); align-items: center; }
   .legend-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
 
-  .section-title { font-size: 13px; font-weight: 700; color: var(--text-dim); margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .section-title { font-size: calc(13px * var(--fs, 1)); font-weight: 700; color: var(--text-dim); margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.05em; }
   .stat-block { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 20px; }
   .streak-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .tag-table th, .tag-table td { padding: 8px 12px; font-size: 12px; }
-  .tag-table thead th { border-bottom: 1px solid var(--border); color: var(--text-mute); font-size: 10px; text-transform: uppercase; }
-  .tag-table tbody td { border-bottom: 1px solid #161B22; }
+  .tag-table th, .tag-table td { padding: 8px 12px; font-size: calc(12px * var(--fs, 1)); }
+  .tag-table thead th { border-bottom: 1px solid var(--border); color: var(--text-mute); font-size: calc(10px * var(--fs, 1)); text-transform: uppercase; }
+  .tag-table tbody td { border-bottom: 1px solid var(--row-border); }
   .tag-table tbody tr:last-child td { border-bottom: none; }
 
-  .footer-note { margin-top: 28px; font-size: 11px; color: var(--text-faint); text-align: center; }
+  .footer-note { margin-top: 28px; font-size: calc(11px * var(--fs, 1)); color: var(--text-faint); text-align: center; }
   #fileImportInput { display: none; }
 
   .rule-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin-bottom: 14px; }
   .rule-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 10px; }
-  .rule-name { font-size: 14px; font-weight: 700; color: var(--gold); }
-  .rule-text { font-size: 13px; color: var(--text-dim); white-space: pre-wrap; line-height: 1.5; }
+  .rule-name { font-size: calc(14px * var(--fs, 1)); font-weight: 700; color: var(--gold); }
+  .rule-text { font-size: calc(13px * var(--fs, 1)); color: var(--text-dim); white-space: pre-wrap; line-height: 1.5; }
   .rule-actions { display: flex; gap: 6px; flex-shrink: 0; }
   .rule-field-block { margin-bottom: 10px; }
-  .rule-field-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 3px; }
+  .rule-field-label { font-size: calc(10px * var(--fs, 1)); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 3px; }
 
   .checklist-block { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border2); }
-  .checklist-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 8px; }
+  .checklist-title { font-size: calc(11px * var(--fs, 1)); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 8px; }
   .checklist-item { display: flex; align-items: flex-start; gap: 9px; padding: 7px 0; cursor: pointer; }
   .checklist-item input[type="checkbox"] { width: 16px; height: 16px; margin-top: 1px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }
-  .checklist-item-text { font-size: 12px; color: var(--text-dim); }
+  .checklist-item-text { font-size: calc(12px * var(--fs, 1)); color: var(--text-dim); }
   .checklist-item-text b { color: var(--text); }
   .checklist-item.done .checklist-item-text { color: var(--text-faint); text-decoration: line-through; }
-  .checklist-ready { font-size: 12px; font-weight: 600; margin-top: 10px; padding: 8px 10px; border-radius: 6px; }
+  .checklist-ready { font-size: calc(12px * var(--fs, 1)); font-weight: 600; margin-top: 10px; padding: 8px 10px; border-radius: 6px; }
   .checklist-ready.yes { background: var(--green-dim); color: var(--green); }
-  .checklist-ready.no { background: #1A2029; color: var(--text-mute); }
-  .checklist-reset { background: none; border: none; color: var(--text-mute); font-size: 11px; text-decoration: underline; cursor: pointer; padding: 0; margin-top: 8px; }
+  .checklist-ready.no { background: var(--chip-bg); color: var(--text-mute); }
+  .checklist-reset { background: none; border: none; color: var(--text-mute); font-size: calc(11px * var(--fs, 1)); text-decoration: underline; cursor: pointer; padding: 0; margin-top: 8px; }
   .checklist-reset:hover { color: var(--gold); }
 
-  .cal-photo-icon { position: absolute; top: 5px; right: 6px; font-size: 11px; cursor: pointer; filter: drop-shadow(0 0 1px #000); }
-  .photo-input-hint { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+  .cal-photo-icon { position: absolute; top: 5px; right: 6px; font-size: calc(11px * var(--fs, 1)); cursor: pointer; filter: drop-shadow(0 0 1px #000); }
+  .photo-input-hint { font-size: calc(11px * var(--fs, 1)); color: var(--text-faint); margin-top: 4px; }
   .photo-thumb-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
   .photo-thumb { width: 46px; height: 46px; object-fit: cover; border-radius: 5px; border: 1px solid var(--border2); }
   .photo-thumb-wrap { position: relative; }
-  .photo-thumb-remove { position: absolute; top: -5px; right: -5px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 15px; height: 15px; font-size: 9px; line-height: 15px; text-align: center; cursor: pointer; padding: 0; }
+  .photo-thumb-remove { position: absolute; top: -5px; right: -5px; background: var(--red); color: #FFFFFF; border: none; border-radius: 50%; width: 15px; height: 15px; font-size: calc(9px * var(--fs, 1)); line-height: 15px; text-align: center; cursor: pointer; padding: 0; }
 
   .row-photo-icon { cursor: pointer; margin-left: 6px; }
 
-  #photoModal { display: none; position: fixed; inset: 0; background: rgba(6,8,10,0.85); z-index: 100; align-items: center; justify-content: center; padding: 30px; }
+  #photoModal { display: none; position: fixed; inset: 0; background: var(--overlay); z-index: 100; align-items: center; justify-content: center; padding: 30px; }
   #photoModal.open { display: flex; }
   .photo-modal-inner { background: var(--panel); border: 1px solid var(--border2); border-radius: 10px; padding: 20px; max-width: 720px; max-height: 85vh; overflow-y: auto; width: 100%; }
   .photo-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-  .photo-modal-title { font-size: 14px; font-weight: 700; }
-  .photo-modal-close { background: none; border: none; color: var(--text-mute); font-size: 20px; cursor: pointer; line-height: 1; }
+  .photo-modal-title { font-size: calc(14px * var(--fs, 1)); font-weight: 700; }
+  .photo-modal-close { background: none; border: none; color: var(--text-mute); font-size: calc(20px * var(--fs, 1)); cursor: pointer; line-height: 1; }
   .photo-modal-close:hover { color: var(--text); }
   .photo-modal-entry { margin-bottom: 16px; }
-  .photo-modal-entry-label { font-size: 12px; color: var(--text-mute); margin-bottom: 6px; }
+  .photo-modal-entry-label { font-size: calc(12px * var(--fs, 1)); color: var(--text-mute); margin-bottom: 6px; }
   .photo-modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
   .photo-modal-grid img { width: 100%; border-radius: 6px; border: 1px solid var(--border2); cursor: zoom-in; }
 
-  .equity-tooltip { position: fixed; background: #0F141A; border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: var(--text); pointer-events: none; display: none; white-space: nowrap; z-index: 200; font-family: 'Consolas', monospace; box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
+  .equity-tooltip { position: fixed; background: var(--input-bg); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: calc(11px * var(--fs, 1)); color: var(--text); pointer-events: none; display: none; white-space: nowrap; z-index: 200; font-family: 'Consolas', monospace; box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
   #equityChartWrap { position: relative; }
   #equityChartWrap svg { touch-action: pan-y; }
   .cal-pnl-short { display: none; }
   .cal-cell.has-photos { cursor: pointer; }
   .form-grid2 { grid-template-columns: 1fr 1fr; }
+
+  /* ---------- Einstellungen ---------- */
+  .set-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--row-border); flex-wrap: wrap; }
+  .set-row:last-child { border-bottom: none; }
+  .set-label { font-size: calc(13px * var(--fs, 1)); color: var(--text-dim); }
+  .set-sub { font-size: calc(11px * var(--fs, 1)); color: var(--text-faint); margin-top: 2px; }
+  .seg { display: inline-flex; background: var(--input-bg); border: 1px solid var(--border2); border-radius: 8px; padding: 3px; gap: 3px; }
+  .seg button { background: none; border: none; color: var(--text-mute); font-size: calc(13px * var(--fs, 1)); font-weight: 600; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-family: inherit; }
+  .seg button.active { background: var(--gold); color: var(--on-accent); }
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+  .swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: inset 0 0 0 2px var(--panel); }
+  .swatch.active { border-color: var(--text); }
+  .set-check { width: 22px; height: 22px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }
+
+  /* ---------- Propfirm ---------- */
+  .pf-intro { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+  .pf-intro > div { flex: 1 1 300px; }
+  .pf-hint { font-size: calc(11px * var(--fs, 1)); color: var(--text-faint); line-height: 1.5; }
+  .pf-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin-bottom: 16px; }
+  .pf-card.passed { border-color: var(--win-border); }
+  .pf-card.failed { border-color: var(--loss-border); }
+  .pf-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .pf-name { font-size: calc(15px * var(--fs, 1)); font-weight: 700; }
+  .pf-sub { font-size: calc(11px * var(--fs, 1)); color: var(--text-mute); margin-top: 3px; }
+  .pf-badge { display: inline-block; font-size: calc(11px * var(--fs, 1)); font-weight: 700; padding: 3px 9px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+  .pf-badge.active { background: var(--chip-bg); color: var(--text-dim); }
+  .pf-badge.passed { background: var(--green-dim); color: var(--green); }
+  .pf-badge.failed { background: var(--red-dim); color: var(--red); }
+  .pf-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pf-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+  .pf-bar { height: 6px; border-radius: 3px; background: var(--input-bg); overflow: hidden; margin-top: 7px; }
+  .pf-bar > div { height: 100%; border-radius: 3px; }
+  .pf-small { font-size: calc(11px * var(--fs, 1)); color: var(--text-mute); margin-top: 4px; }
+  .pf-alert { font-size: calc(12px * var(--fs, 1)); padding: 8px 10px; border-radius: 6px; margin-bottom: 8px; }
+  .pf-alert.bad { background: var(--red-dim); color: var(--red); }
+  .pf-alert.warn { background: var(--amber-dim); color: var(--amber); }
+  .pf-alert.good { background: var(--green-dim); color: var(--green); }
+  .pf-mc { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border2); }
+  .pf-mc-opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: end; margin-bottom: 10px; }
+  .pf-mc-check { display: flex; align-items: center; gap: 8px; font-size: calc(12px * var(--fs, 1)); color: var(--text-dim); cursor: pointer; min-height: 38px; }
+  .pf-mc-check input { width: 18px; height: 18px; min-height: 0; accent-color: var(--gold); }
+  .pf-mc-result { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+  .pf-chart svg { width: 100%; height: auto; display: block; }
+  .acct-pill { display: inline-block; background: var(--accent-soft); border: 1px solid var(--gold); color: var(--gold); border-radius: 999px; padding: 1px 7px; font-size: calc(10px * var(--fs, 1)); margin-left: 4px; }
 
   /* ---------- Responsive: Tablet / Handy ---------- */
   @media (max-width: 600px) {
@@ -208,23 +307,23 @@
     .header-actions .btn { flex: 1 1 100%; justify-content: center; order: -1; }
 
     /* Tap-Ziele ≥ 44px; 16px Schrift verhindert Auto-Zoom auf iOS */
-    .btn, .btn-ghost, .btn-sm { min-height: 44px; font-size: 14px; }
-    input, select, textarea { font-size: 16px; min-height: 44px; padding: 10px 12px; }
+    .btn, .btn-ghost, .btn-sm { min-height: 44px; font-size: calc(14px * var(--fs, 1)); }
+    input, select, textarea { font-size: max(16px, calc(16px * var(--fs, 1))); min-height: 44px; padding: 10px 12px; }
     input[type="file"] { padding: 8px; }
-    .btn-icon { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; font-size: 16px; }
-    .tag-chip { min-height: 36px; padding: 8px 14px; font-size: 12px; }
-    .risk-set-link, .checklist-reset { min-height: 36px; font-size: 12px; }
+    .btn-icon { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; font-size: calc(16px * var(--fs, 1)); }
+    .tag-chip { min-height: 36px; padding: 8px 14px; font-size: calc(12px * var(--fs, 1)); }
+    .risk-set-link, .checklist-reset { min-height: 36px; font-size: calc(12px * var(--fs, 1)); }
     .risk-edit-row { flex-wrap: wrap; }
     .risk-edit-row input { max-width: none; flex: 1 1 120px; }
 
     .tabs { gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .tabs::-webkit-scrollbar { display: none; }
-    .tab-btn { flex: 1 0 auto; margin-right: 0; min-height: 44px; padding: 10px 8px; font-size: 14px; }
+    .tab-btn { flex: 1 0 auto; margin-right: 0; min-height: 44px; padding: 10px 8px; font-size: calc(14px * var(--fs, 1)); }
 
     .stats { grid-template-columns: 1fr 1fr; gap: 8px; }
     .stats .stat-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
     .streak-row { grid-template-columns: 1fr 1fr; gap: 8px; }
-    .stat-value { font-size: 16px; overflow-wrap: anywhere; }
+    .stat-value { font-size: calc(16px * var(--fs, 1)); overflow-wrap: anywhere; }
 
     .form-panel { padding: 14px; }
     .form-grid3 { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -232,7 +331,7 @@
     .form-grid3.form-grid2 { grid-template-columns: 1fr; }
     .form-actions .btn, .form-actions .btn-ghost { flex: 1; justify-content: center; }
     .photo-thumb { width: 64px; height: 64px; }
-    .photo-thumb-remove { width: 24px; height: 24px; font-size: 12px; line-height: 24px; top: -8px; right: -8px; }
+    .photo-thumb-remove { width: 24px; height: 24px; font-size: calc(12px * var(--fs, 1)); line-height: 24px; top: -8px; right: -8px; }
 
     /* Journal: Karte pro Trade statt Tabellenzeile */
     #tableWrap { border: none; border-radius: 0; overflow: visible; }
@@ -254,31 +353,31 @@
       padding: 10px 6px 10px 14px;
       margin-bottom: 8px;
     }
-    #tableWrap tbody td { padding: 2px 0; border: none; font-size: 13px; text-align: left !important; }
+    #tableWrap tbody td { padding: 2px 0; border: none; font-size: calc(13px * var(--fs, 1)); text-align: left !important; }
     #tableWrap tbody td:empty { display: none; }
     #tableWrap tbody td:nth-child(1) { grid-area: date; color: var(--text-dim); font-weight: 600; }
     #tableWrap tbody td:nth-child(2) { grid-area: instr; }
     #tableWrap tbody td:nth-child(3) { grid-area: side; }
     #tableWrap tbody td:nth-child(4) { grid-area: tag; padding-top: 6px; }
-    #tableWrap tbody td:nth-child(5) { grid-area: pnl; font-size: 15px; text-align: right !important; }
+    #tableWrap tbody td:nth-child(5) { grid-area: pnl; font-size: calc(15px * var(--fs, 1)); text-align: right !important; }
     #tableWrap tbody td:nth-child(6) { grid-area: rr; color: var(--text-mute); }
     #tableWrap tbody td:nth-child(7) { grid-area: notes; max-width: none; white-space: normal; padding-top: 6px; }
     #tableWrap tbody td:nth-child(8) { grid-area: del; align-self: start; }
-    .row-photo-icon { display: inline-block; padding: 4px 8px; font-size: 16px; }
+    .row-photo-icon { display: inline-block; padding: 4px 8px; font-size: calc(16px * var(--fs, 1)); }
 
     /* Kalender kompakt */
     .cal-header { flex-wrap: wrap; gap: 8px; }
     .cal-nav { gap: 6px; }
-    .cal-nav button { width: 44px; height: 44px; font-size: 18px; }
-    .cal-month-label { min-width: 130px; font-size: 14px; }
+    .cal-nav button { width: 44px; height: 44px; font-size: calc(18px * var(--fs, 1)); }
+    .cal-month-label { min-width: 130px; font-size: calc(14px * var(--fs, 1)); }
     .cal-grid { gap: 3px; }
     .cal-cell { aspect-ratio: auto; min-height: 52px; padding: 3px 4px; border-radius: 5px; }
-    .cal-daynum { font-size: 10px; }
-    .cal-pnl { font-size: 10px; margin-top: 3px; letter-spacing: -0.02em; }
+    .cal-daynum { font-size: calc(10px * var(--fs, 1)); }
+    .cal-pnl { font-size: calc(10px * var(--fs, 1)); margin-top: 3px; letter-spacing: -0.02em; }
     .cal-pnl-full { display: none; }
     .cal-pnl-short { display: inline; }
     .cal-trades { display: none; }
-    .cal-photo-icon { top: 2px; right: 3px; font-size: 10px; }
+    .cal-photo-icon { top: 2px; right: 3px; font-size: calc(10px * var(--fs, 1)); }
     .cal-legend { flex-wrap: wrap; gap: 10px 14px; }
 
     .stat-block { padding: 14px 12px; }
@@ -287,21 +386,33 @@
     .rule-card-top { flex-wrap: wrap; }
     .checklist-item { padding: 10px 0; }
     .checklist-item input[type="checkbox"] { width: 22px; height: 22px; min-height: 0; margin-top: -2px; }
-    .checklist-item-text { font-size: 13px; }
+    .checklist-item-text { font-size: calc(13px * var(--fs, 1)); }
 
     #photoModal { padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)); }
     .photo-modal-inner { max-width: 100%; max-height: 92vh; max-height: 92dvh; padding: 14px; }
-    .photo-modal-close { min-width: 44px; min-height: 44px; font-size: 22px; }
+    .photo-modal-close { min-width: 44px; min-height: 44px; font-size: calc(22px * var(--fs, 1)); }
     .photo-modal-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    .pf-card { padding: 14px 12px; }
+    .pf-metrics { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .pf-mc-opts { grid-template-columns: 1fr 1fr; }
+    .pf-mc-result { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .pf-intro .btn { width: 100%; justify-content: center; }
+    .seg button { min-height: 40px; padding: 8px 14px; }
+    .swatch { width: 38px; height: 38px; }
+    #setStartTab { max-width: none !important; }
+    .set-row { padding: 12px 0; }
   }
 
   @media (max-width: 400px) {
     .form-grid3 { grid-template-columns: 1fr; }
     .stats, .streak-row { grid-template-columns: 1fr 1fr; }
     .stat-card { padding: 10px; }
-    .stat-value { font-size: 15px; }
-    .header-actions .btn-ghost { font-size: 12px; }
-    .cal-pnl { font-size: 9px; }
+    .stat-value { font-size: calc(15px * var(--fs, 1)); }
+    .header-actions .btn-ghost { font-size: calc(12px * var(--fs, 1)); }
+    .cal-pnl { font-size: calc(9px * var(--fs, 1)); }
   }
 </style>
 </head>
@@ -343,6 +454,8 @@
     <button class="tab-btn" data-tab="calendar">Kalender</button>
     <button class="tab-btn" data-tab="stats">Statistik</button>
     <button class="tab-btn" data-tab="regeln">Regeln</button>
+    <button class="tab-btn" data-tab="propfirm">Propfirm</button>
+    <button class="tab-btn" data-tab="settings">Einstellungen</button>
   </div>
 
   <div class="tab-panel active" id="tab-journal">
@@ -362,9 +475,7 @@
         </div>
         <div>
           <label class="field-label">Instrument</label>
-          <select id="f_instrument">
-            <option>MES</option><option>MNQ</option><option>ES</option><option>NQ</option><option>MYM</option><option>M2K</option><option>Sonstiges</option>
-          </select>
+          <select id="f_instrument"></select>
         </div>
         <div>
           <label class="field-label">Richtung</label>
@@ -388,6 +499,11 @@
           <label class="field-label">RR (Risk/Reward)</label>
           <input type="number" step="0.01" id="f_rr" placeholder="z.B. 2.5 oder -1">
         </div>
+      </div>
+
+      <div style="margin-bottom:14px;" id="f_account_wrap">
+        <label class="field-label">Propfirm-Konto</label>
+        <select id="f_account"></select>
       </div>
 
       <div style="margin-bottom:14px;">
@@ -438,7 +554,7 @@
         <thead>
           <tr>
             <th>Datum</th><th>Instr.</th><th>Seite</th><th>Tag</th>
-            <th style="text-align:right;">P/L</th><th style="text-align:right;">RR</th><th>Notizen</th><th></th>
+            <th style="text-align:right;" id="thPrimary">P/L</th><th style="text-align:right;" id="thSecondary">RR</th><th>Notizen</th><th></th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -457,9 +573,9 @@
     </div>
     <div class="cal-grid" id="calGrid"></div>
     <div class="cal-legend">
-      <span><span class="legend-swatch" style="background:var(--green-dim); border:1px solid #2C6B50;"></span>Gewinntag</span>
-      <span><span class="legend-swatch" style="background:var(--red-dim); border:1px solid #7A3336;"></span>Verlusttag</span>
-      <span><span class="legend-swatch" style="background:#1A2029; border:1px solid var(--border2);"></span>Break-even</span>
+      <span><span class="legend-swatch" style="background:var(--green-dim); border:1px solid var(--win-border);"></span>Gewinntag</span>
+      <span><span class="legend-swatch" style="background:var(--red-dim); border:1px solid var(--loss-border);"></span>Verlusttag</span>
+      <span><span class="legend-swatch" style="background:var(--chip-bg); border:1px solid var(--border2);"></span>Break-even</span>
     </div>
   </div>
 
@@ -516,6 +632,125 @@
     </div>
     <div id="rulesEmptyState" class="empty-state" style="display:none;">Noch keine Strategien/Regeln eingetragen.</div>
     <div id="rulesList"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-propfirm">
+    <div class="pf-intro">
+      <div>
+        <div class="section-title" style="margin-bottom:4px;">Propfirm-Simulation</div>
+        <div class="pf-hint">Trades, die einem Konto zugeordnet sind, werden live gegen die Regeln gerechnet. Vorlagen nach Lucid Trading (Drittquellen, Stand Nov. 2026) – bitte Werte vor dem Kauf auf lucidtrading.com prüfen, alles ist editierbar.</div>
+      </div>
+      <button class="btn" id="pfNewBtn" type="button">+ Konto anlegen</button>
+    </div>
+
+    <div class="form-panel" id="pfForm">
+      <div class="section-title" style="margin-bottom:14px;" id="pfFormTitle">Neues Konto</div>
+      <div class="form-grid3">
+        <div><label class="field-label">Vorlage</label><select id="pf_preset"></select></div>
+        <div><label class="field-label">Name</label><input type="text" id="pf_name" placeholder="z.B. Lucid 50K #1"></div>
+        <div><label class="field-label">Startdatum</label><input type="date" id="pf_startDate"></div>
+      </div>
+      <div class="form-grid3">
+        <div><label class="field-label">Startkapital ($)</label><input type="number" id="pf_start" min="0" step="100"></div>
+        <div><label class="field-label">Gewinnziel ($)</label><input type="number" id="pf_target" min="0" step="50"></div>
+        <div><label class="field-label">Max. Drawdown ($)</label><input type="number" id="pf_maxDD" min="0" step="50"></div>
+      </div>
+      <div class="form-grid3">
+        <div><label class="field-label">Drawdown-Art</label>
+          <select id="pf_ddType">
+            <option value="eod">Trailing – Tagesende (EOD)</option>
+            <option value="intraday">Trailing – Intraday (pro Trade)</option>
+            <option value="static">Statisch</option>
+          </select></div>
+        <div><label class="field-label">Trailing stoppt bei Start + ($)</label><input type="number" id="pf_lock" step="50" placeholder="leer = nie"></div>
+        <div><label class="field-label">Tagesverlust-Limit ($)</label><input type="number" id="pf_dll" min="0" step="50" placeholder="leer = keins"></div>
+      </div>
+      <div class="form-grid3">
+        <div><label class="field-label">Tageslimit-Verstoß</label>
+          <select id="pf_dllHard">
+            <option value="soft">Soft – Tag gesperrt, Konto bleibt</option>
+            <option value="hard">Hard – Konto verloren</option>
+          </select></div>
+        <div><label class="field-label">Konsistenz: bester Tag max. (%)</label><input type="number" id="pf_consistency" min="0" max="100" step="5" placeholder="leer = keine"></div>
+        <div><label class="field-label">Min. Handelstage</label><input type="number" id="pf_minDays" min="0" step="1"></div>
+      </div>
+      <div class="form-grid3 form-grid2">
+        <div><label class="field-label">Max. Kontrakte (Minis, Micros = ×10)</label><input type="number" id="pf_maxMinis" min="0" step="1" placeholder="leer = unbegrenzt"></div>
+        <div></div>
+      </div>
+      <div class="error-msg" id="pfFormError" style="display:none;"></div>
+      <div class="form-actions">
+        <button type="button" class="btn" id="pfSaveBtn">Speichern</button>
+        <button type="button" class="btn-ghost" id="pfCancelBtn">Abbrechen</button>
+      </div>
+      <input type="hidden" id="pf_editId" value="">
+    </div>
+
+    <div id="pfEmptyState" class="empty-state" style="display:none;">Noch kein Propfirm-Konto. Lege eins an und ordne beim Eintragen deine Trades zu.</div>
+    <div id="pfList"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-settings">
+    <div class="stat-block">
+      <div class="section-title">Darstellung</div>
+      <div class="set-row">
+        <div class="set-label">Design</div>
+        <div class="seg" id="setTheme">
+          <button type="button" data-val="system">System</button>
+          <button type="button" data-val="dark">Dunkel</button>
+          <button type="button" data-val="light">Hell</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <div class="set-label">Akzentfarbe</div>
+        <div class="swatches" id="setAccent"></div>
+      </div>
+      <div class="set-row">
+        <div class="set-label">Schriftgröße</div>
+        <div class="seg" id="setFontSize">
+          <button type="button" data-val="small">Klein</button>
+          <button type="button" data-val="normal">Normal</button>
+          <button type="button" data-val="large">Groß</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-block">
+      <div class="section-title">Anzeige</div>
+      <div class="set-row">
+        <div class="set-label">Ergebnis anzeigen in<div class="set-sub">R = Summe der eingetragenen RR-Werte</div></div>
+        <div class="seg" id="setPlMode">
+          <button type="button" data-val="usd">$</button>
+          <button type="button" data-val="r">R</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <div class="set-label">Start-Tab</div>
+        <select id="setStartTab" style="max-width:220px;">
+          <option value="journal">Journal</option>
+          <option value="calendar">Kalender</option>
+          <option value="stats">Statistik</option>
+          <option value="regeln">Regeln</option>
+          <option value="propfirm">Propfirm</option>
+        </select>
+      </div>
+      <div class="set-row">
+        <label class="set-label" for="setHideWeekends">Wochenenden im Kalender ausblenden</label>
+        <input type="checkbox" id="setHideWeekends" class="set-check">
+      </div>
+    </div>
+
+    <div class="stat-block">
+      <div class="section-title">Instrumente</div>
+      <div class="pf-hint" style="margin-bottom:8px;">Eins pro Zeile. Erscheinen in dieser Reihenfolge im Trade-Formular.</div>
+      <textarea id="setInstruments" rows="6"></textarea>
+      <div class="form-actions" style="margin-top:10px;">
+        <button type="button" class="btn" id="setInstrumentsSave">Instrumente speichern</button>
+        <button type="button" class="btn-ghost" id="setInstrumentsReset">Standard</button>
+      </div>
+    </div>
+
+    <div class="pf-hint" style="text-align:center;">Einstellungen und Propfirm-Konten sind im JSON-Backup enthalten.</div>
   </div>
 
   <div class="footer-note">Daten werden lokal gespeichert. Regelmäßiges Backup wird empfohlen.</div>
@@ -589,15 +824,172 @@
     catch (e) { return false; }
   }
 
+  // ---------- Einstellungen ----------
+  const SETTINGS_KEY = "trading_journal_settings_v1";
+  const ACCOUNTS_KEY = "trading_journal_accounts_v1";
+  const DEFAULT_INSTRUMENTS = ["MES", "MNQ", "ES", "NQ", "MYM", "M2K", "Sonstiges"];
+  const DEFAULT_SETTINGS = { theme: "dark", accent: "gold", fontSize: "normal", plMode: "usd", startTab: "journal", hideWeekends: false, instruments: DEFAULT_INSTRUMENTS, lastAccountId: "" };
+  const ACCENTS = { gold: "#D4A54A", blue: "#4C8FE8", violet: "#8C6CF0", green: "#3FB68B", cyan: "#35B3C8", rose: "#E2669B" };
+
+  function loadJson(key, fallback) {
+    if (!storageAvailable) return fallback;
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+    catch (e) { return fallback; }
+  }
+  function saveJson(key, val) {
+    if (!storageAvailable) return false;
+    try { localStorage.setItem(key, JSON.stringify(val)); return true; } catch (e) { return false; }
+  }
+  function normalizeSettings(s) {
+    const out = { ...DEFAULT_SETTINGS, ...(s && typeof s === "object" ? s : {}) };
+    if (!Array.isArray(out.instruments) || !out.instruments.length) out.instruments = [...DEFAULT_INSTRUMENTS];
+    return out;
+  }
+  let settings = normalizeSettings(loadJson(SETTINGS_KEY, {}));
+  function saveSettings(patch) {
+    settings = normalizeSettings({ ...settings, ...patch });
+    saveJson(SETTINGS_KEY, settings);
+  }
+
+  const darkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function applyAppearance() {
+    const root = document.documentElement;
+    const dark = settings.theme === "system" ? (darkQuery ? darkQuery.matches : true) : settings.theme !== "light";
+    root.dataset.theme = dark ? "dark" : "light";
+    root.dataset.accent = ACCENTS[settings.accent] ? settings.accent : "gold";
+    root.style.setProperty("--fs", { small: 0.9, normal: 1, large: 1.12 }[settings.fontSize] || 1);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", dark ? "#0B0F14" : "#F4F6F9");
+  }
+  if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener("change", () => { if (settings.theme === "system") { applyAppearance(); renderAll(); } });
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
   let entries = loadEntries();
   let riskLimit = loadRiskLimit();
   let rules = loadRules();
+  let accounts = loadJson(ACCOUNTS_KEY, []);
+  if (!Array.isArray(accounts)) accounts = [];
+  function saveAccounts(list) { accounts = list; return saveJson(ACCOUNTS_KEY, list); }
   let activeTagFilter = null;
 
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function fmtMoney(n) { const v = Number(n) || 0; return v.toLocaleString("de-DE", { style: "currency", currency: "USD" }); }
   function fmtDate(iso) { const d = new Date(iso); return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }); }
-  function todayStr() { return new Date().toISOString().slice(0,10); }
+  // Lokales Datum (nicht UTC), sonst zählt ein Trade kurz nach Mitternacht zum Vortag
+  function todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+  function esc(s) { return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+  // ---------- Ergebnis in $ oder R ----------
+  function isR() { return settings.plMode === "r"; }
+  function hasRR(e) { return e.rr !== null && e.rr !== undefined && e.rr !== "" && !isNaN(e.rr); }
+  function val(e) { return isR() ? (hasRR(e) ? Number(e.rr) : 0) : e.pnl; }
+  function fmtR(n) { const v = Number(n) || 0; return (v > 0 ? "+" : "") + v.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "R"; }
+  function fmtVal(n, signed) { return isR() ? fmtR(n) : (signed && n > 0 ? "+" : "") + fmtMoney(n); }
+  function fmtValShort(n) { return isR() ? ((n > 0 ? "+" : "") + (Number(n) || 0).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + "R") : fmtMoneyShort(n); }
+
+  // ---------- Propfirm-Engine ----------
+  // Vorlagen nach Lucid Trading (Drittquellen, Stand Nov. 2026) – alles editierbar.
+  const PF_PRESETS = [
+    { id: "custom", label: "Eigene Werte" },
+    { id: "lflex25",  label: "LucidFlex 25K",  start: 25000,  target: 1250, maxDD: 1000, ddType: "eod", dll: null, consistency: 50, minDays: 0, maxMinis: 2 },
+    { id: "lflex50",  label: "LucidFlex 50K",  start: 50000,  target: 3000, maxDD: 2000, ddType: "eod", dll: null, consistency: 50, minDays: 0, maxMinis: 4 },
+    { id: "lflex100", label: "LucidFlex 100K", start: 100000, target: 6000, maxDD: 3000, ddType: "eod", dll: null, consistency: 50, minDays: 0, maxMinis: 6 },
+    { id: "lflex150", label: "LucidFlex 150K", start: 150000, target: 9000, maxDD: 4500, ddType: "eod", dll: null, consistency: 50, minDays: 0, maxMinis: 10 },
+    { id: "lpro25",   label: "LucidPro 25K",   start: 25000,  target: 1250, maxDD: 1000, ddType: "eod", dll: null, consistency: null, minDays: 0, maxMinis: 2 },
+    { id: "lpro50",   label: "LucidPro 50K",   start: 50000,  target: 3000, maxDD: 2000, ddType: "eod", dll: 1200, consistency: null, minDays: 0, maxMinis: 4 },
+    { id: "lpro100",  label: "LucidPro 100K",  start: 100000, target: 6000, maxDD: 3000, ddType: "eod", dll: 1800, consistency: null, minDays: 0, maxMinis: 6 },
+    { id: "lpro150",  label: "LucidPro 150K",  start: 150000, target: 9000, maxDD: 4500, ddType: "eod", dll: 2700, consistency: null, minDays: 0, maxMinis: 10 },
+  ];
+  const DD_LABELS = { eod: "Trailing EOD", intraday: "Trailing intraday", static: "Statisch" };
+  const MICRO_RE = /^M(ES|NQ|YM|2K|GC|CL|BT|ET|6E)$/i;
+  function miniEquivalent(e) { const n = Number(e.size) || 1; return MICRO_RE.test(e.instrument || "") ? n / 10 : n; }
+
+  function pfFloor(acc, hw) {
+    if (acc.ddType === "static") return acc.start - acc.maxDD;
+    let f = hw - acc.maxDD;
+    if (acc.lockOffset !== null && acc.lockOffset !== undefined && acc.lockOffset !== "") f = Math.min(f, acc.start + Number(acc.lockOffset));
+    return f;
+  }
+  function pfInitState(acc) {
+    return { balance: acc.start, hw: acc.start, floor: pfFloor(acc, acc.start), days: 0, bestDay: 0, status: "active", reason: "", passDate: null, dllDays: [], series: [] };
+  }
+  function pfConsistencyOk(acc, st) {
+    if (!acc.consistency) return true;
+    const profit = st.balance - acc.start;
+    return profit > 0 && st.bestDay <= profit * acc.consistency / 100 + 1e-9;
+  }
+  // Einen Handelstag auf den Zustand anwenden. day = { date, pnls: [..] }
+  // opts.stopOnSoftDll: im Monte-Carlo werden nach Erreichen des Tageslimits keine weiteren Trades des Tages gezählt.
+  function pfStepDay(acc, st, day, opts) {
+    if (st.status !== "active") return st;
+    let dayPnl = 0;
+    for (const pnl of day.pnls) {
+      st.balance += pnl; dayPnl += pnl;
+      if (acc.ddType === "intraday" && st.balance > st.hw) { st.hw = st.balance; st.floor = pfFloor(acc, st.hw); }
+      if (st.balance <= st.floor + 1e-9) {
+        st.status = "failed"; st.reason = `Max. Drawdown erreicht (Grenze ${fmtMoney(st.floor)})`; st.failDate = day.date; break;
+      }
+      if (acc.dll && dayPnl <= -acc.dll + 1e-9) {
+        if (acc.dllHard) { st.status = "failed"; st.reason = `Tagesverlust-Limit (${fmtMoney(acc.dll)}) überschritten`; st.failDate = day.date; break; }
+        if (!st.dllDays.includes(day.date)) st.dllDays.push(day.date);
+        if (opts && opts.stopOnSoftDll) break;
+      }
+    }
+    st.days += 1;
+    if (dayPnl > st.bestDay) st.bestDay = dayPnl;
+    if (st.status === "active" && acc.ddType === "eod" && st.balance > st.hw) { st.hw = st.balance; st.floor = pfFloor(acc, st.hw); }
+    if (opts && opts.track) st.series.push({ date: day.date, balance: st.balance, floor: st.floor });
+    if (st.status === "active" && st.balance - acc.start >= acc.target - 1e-9 && st.days >= (acc.minDays || 0) && pfConsistencyOk(acc, st)) {
+      st.status = "passed"; st.passDate = day.date;
+    }
+    return st;
+  }
+  function accountTrades(acc) {
+    return entries.filter(e => e.accountId === acc.id)
+      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.createdAt || 0) - (b.createdAt || 0)));
+  }
+  function groupDays(trades, scale) {
+    const map = new Map();
+    trades.forEach(e => { if (!map.has(e.date)) map.set(e.date, []); map.get(e.date).push(e.pnl * (scale || 1)); });
+    return [...map.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([date, pnls]) => ({ date, pnls }));
+  }
+  function evaluateAccount(acc) {
+    const trades = accountTrades(acc);
+    const st = pfInitState(acc);
+    st.series.push({ date: acc.startDate || "", balance: acc.start, floor: st.floor });
+    const days = groupDays(trades);
+    let afterEnd = 0;
+    days.forEach(d => { if (st.status === "active") pfStepDay(acc, st, d, { track: true }); else afterEnd += d.pnls.length; });
+    st.trades = trades;
+    st.ignoredTrades = afterEnd;
+    st.contractViolations = acc.maxMinis ? trades.filter(e => miniEquivalent(e) > acc.maxMinis + 1e-9) : [];
+    st.todayPnl = trades.filter(e => e.date === todayStr()).reduce((s, e) => s + e.pnl, 0);
+    return st;
+  }
+  // Monte Carlo: zieht zufällig echte Handelstage (mit ihrer Trade-Reihenfolge) und spielt die Challenge durch.
+  function monteCarlo(acc, sourceTrades, { runs = 5000, maxDays = 60, scale = 1, fromCurrent = false } = {}) {
+    const pool = groupDays(sourceTrades, scale);
+    if (pool.length < 5) return { error: `Zu wenig Daten: mindestens 5 Handelstage nötig (aktuell ${pool.length}).` };
+    let base = pfInitState(acc);
+    if (fromCurrent) {
+      const cur = evaluateAccount(acc);
+      if (cur.status !== "active") return { error: "Das Konto ist bereits abgeschlossen – „ab aktuellem Stand“ abwählen." };
+      base = { ...cur, series: [], dllDays: [] };
+    }
+    let pass = 0, fail = 0; const passDays = [];
+    for (let r = 0; r < runs; r++) {
+      const st = { ...base, series: [], dllDays: [] };
+      let d = 0;
+      while (st.status === "active" && d < maxDays) {
+        pfStepDay(acc, st, pool[Math.floor(Math.random() * pool.length)], { stopOnSoftDll: true });
+        d++;
+      }
+      if (st.status === "passed") { pass++; passDays.push(d); } else if (st.status === "failed") fail++;
+    }
+    passDays.sort((a, b) => a - b);
+    const avgDay = pool.reduce((s, x) => s + x.pnls.reduce((a, b) => a + b, 0), 0) / pool.length;
+    return { runs, pass: pass / runs, fail: fail / runs, open: (runs - pass - fail) / runs, medianDays: passDays.length ? passDays[Math.floor(passDays.length / 2)] : null, poolDays: pool.length, avgDay };
+  }
   // Kompaktes Format für schmale Kalenderzellen: +125 / -1,2k
   function fmtMoneyShort(n) {
     const v = Number(n) || 0, a = Math.abs(v), sign = v > 0 ? "+" : v < 0 ? "-" : "";
@@ -779,19 +1171,21 @@
   }
 
   function renderJournal() {
-    const total = entries.reduce((s, e) => s + e.pnl, 0);
-    document.getElementById("totalPnl").textContent = entries.length ? fmtMoney(total) : "—";
+    const total = entries.reduce((s, e) => s + val(e), 0);
+    document.getElementById("totalPnl").textContent = entries.length ? fmtVal(total) : "—";
 
     const wins = entries.filter(e => e.pnl > 0);
     const losses = entries.filter(e => e.pnl < 0);
     const winRate = entries.length ? (wins.length / entries.length) * 100 : 0;
-    const avgWin = wins.length ? wins.reduce((s, e) => s + e.pnl, 0) / wins.length : null;
-    const avgLoss = losses.length ? losses.reduce((s, e) => s + e.pnl, 0) / losses.length : null;
+    const avgWin = wins.length ? wins.reduce((s, e) => s + val(e), 0) / wins.length : null;
+    const avgLoss = losses.length ? losses.reduce((s, e) => s + val(e), 0) / losses.length : null;
 
     document.getElementById("statCount").textContent = entries.length;
     document.getElementById("statWinrate").textContent = entries.length ? winRate.toFixed(0) + "%" : "—";
-    document.getElementById("statAvgWin").textContent = avgWin !== null ? fmtMoney(avgWin) : "—";
-    document.getElementById("statAvgLoss").textContent = avgLoss !== null ? fmtMoney(avgLoss) : "—";
+    document.getElementById("statAvgWin").textContent = avgWin !== null ? fmtVal(avgWin) : "—";
+    document.getElementById("statAvgLoss").textContent = avgLoss !== null ? fmtVal(avgLoss) : "—";
+    document.getElementById("thPrimary").textContent = isR() ? "R" : "P/L";
+    document.getElementById("thSecondary").textContent = isR() ? "P/L" : "RR";
     const withRR = entries.filter(e => e.rr !== null && e.rr !== undefined && !isNaN(e.rr));
     const avgRR = withRR.length ? withRR.reduce((s, e) => s + e.rr, 0) / withRR.length : null;
     document.getElementById("statAvgRR").textContent = avgRR !== null ? (avgRR > 0 ? "+" : "") + avgRR.toFixed(2) + "R" : "—";
@@ -816,9 +1210,9 @@
           <td>${fmtDate(e.date)}</td>
           <td class="mono">${e.instrument}</td>
           <td class="${e.direction === 'long' ? 'dir-long' : 'dir-short'}">${e.direction === 'long' ? 'Long' : 'Short'}</td>
-          <td>${e.tag ? `<span class="tag-pill">${e.tag.replace(/</g,"&lt;")}</span>` : ""}${e.photos && e.photos.length ? `<span class="row-photo-icon" data-photo-id="${e.id}" title="Fotos ansehen">📷</span>` : ""}</td>
-          <td style="text-align:right;" class="mono ${e.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}">${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}</td>
-          <td style="text-align:right;" class="mono">${(e.rr === null || e.rr === undefined || e.rr === "") ? "—" : (e.rr > 0 ? "+" : "") + e.rr + "R"}</td>
+          <td>${e.tag ? `<span class="tag-pill">${e.tag.replace(/</g,"&lt;")}</span>` : ""}${accountName(e.accountId) ? `<span class="acct-pill">${esc(accountName(e.accountId))}</span>` : ""}${e.photos && e.photos.length ? `<span class="row-photo-icon" data-photo-id="${e.id}" title="Fotos ansehen">📷</span>` : ""}</td>
+          <td style="text-align:right;" class="mono ${(isR() ? val(e) : e.pnl) >= 0 ? 'pnl-pos' : 'pnl-neg'}">${isR() ? (hasRR(e) ? fmtR(e.rr) : "—") : (e.pnl >= 0 ? '+' : '') + fmtMoney(e.pnl)}</td>
+          <td style="text-align:right;" class="mono">${isR() ? (e.pnl >= 0 ? '+' : '') + fmtMoney(e.pnl) : (hasRR(e) ? (e.rr > 0 ? "+" : "") + e.rr + "R" : "—")}</td>
           <td class="notes-cell">${e.notes ? e.notes.replace(/</g, "&lt;") : ""}</td>
           <td><button class="btn-icon" data-id="${e.id}" title="Löschen">✕</button></td>
         `;
@@ -854,26 +1248,30 @@
       if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
         const key = e.date;
         if (!dayMap[key]) dayMap[key] = { pnl: 0, count: 0, photoEntries: [] };
-        dayMap[key].pnl += e.pnl;
+        dayMap[key].pnl += val(e);
         dayMap[key].count += 1;
         if (e.photos && e.photos.length) dayMap[key].photoEntries.push(e);
       }
     });
     const monthTotal = Object.values(dayMap).reduce((s, d) => s + d.pnl, 0);
     const totalEl = document.getElementById("calMonthTotal");
-    totalEl.textContent = Object.keys(dayMap).length ? fmtMoney(monthTotal) : "—";
+    totalEl.textContent = Object.keys(dayMap).length ? fmtVal(monthTotal) : "—";
     totalEl.style.color = monthTotal > 0 ? "var(--green)" : monthTotal < 0 ? "var(--red)" : "var(--text-dim)";
 
     const grid = document.getElementById("calGrid");
     grid.innerHTML = "";
-    DOW_LABELS.forEach(l => { const el = document.createElement("div"); el.className = "cal-dow"; el.textContent = l; grid.appendChild(el); });
+    const hideWe = !!settings.hideWeekends;
+    grid.style.gridTemplateColumns = `repeat(${hideWe ? 5 : 7}, 1fr)`;
+    (hideWe ? DOW_LABELS.slice(0, 5) : DOW_LABELS).forEach(l => { const el = document.createElement("div"); el.className = "cal-dow"; el.textContent = l; grid.appendChild(el); });
 
     const firstOfMonth = new Date(calYear, calMonth, 1);
-    let leadingBlanks = (firstOfMonth.getDay() + 6) % 7;
+    const firstDow = (firstOfMonth.getDay() + 6) % 7;
+    let leadingBlanks = hideWe ? (firstDow < 5 ? firstDow : 0) : firstDow;
     const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
     for (let i = 0; i < leadingBlanks; i++) { const el = document.createElement("div"); el.className = "cal-cell empty"; grid.appendChild(el); }
 
     for (let day = 1; day <= daysInMonth; day++) {
+      if (hideWe && [0, 6].includes(new Date(calYear, calMonth, day).getDay())) continue;
       const key = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       const data = dayMap[key];
       const cell = document.createElement("div");
@@ -881,7 +1279,7 @@
       if (data) cell.classList.add(data.pnl > 0 ? "win" : data.pnl < 0 ? "loss" : "flat");
       let inner = `<div class="cal-daynum">${day}</div>`;
       if (data) {
-        inner += `<div class="cal-pnl"><span class="cal-pnl-full">${data.pnl >= 0 ? "+" : ""}${fmtMoney(data.pnl)}</span><span class="cal-pnl-short">${fmtMoneyShort(data.pnl)}</span></div>`;
+        inner += `<div class="cal-pnl"><span class="cal-pnl-full">${fmtVal(data.pnl, true)}</span><span class="cal-pnl-short">${fmtValShort(data.pnl)}</span></div>`;
         inner += `<div class="cal-trades">${data.count} Trade${data.count > 1 ? "s" : ""}</div>`;
         if (data.photoEntries.length) inner += `<span class="cal-photo-icon" title="Fotos ansehen">📷</span>`;
       }
@@ -891,7 +1289,7 @@
         cell.addEventListener("click", (ev) => {
           ev.stopPropagation();
           openPhotoModal(fmtDate(key), data.photoEntries.map(e => ({
-            label: `${e.instrument} · ${e.direction === 'long' ? 'Long' : 'Short'} · ${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}`,
+            label: `${e.instrument} · ${e.direction === 'long' ? 'Long' : 'Short'} · ${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}${hasRR(e) ? ' · ' + fmtR(e.rr) : ''}`,
             photos: e.photos
           })));
         });
@@ -908,7 +1306,7 @@
     }
     const sorted = [...entries].sort((a,b) => new Date(a.date) - new Date(b.date) || a.createdAt - b.createdAt);
     let cum = 0;
-    const points = sorted.map(e => { cum += e.pnl; return cum; });
+    const points = sorted.map(e => { cum += val(e); return cum; });
     // viewBox an die echte Breite anpassen, damit Linie/Punkte auf dem Handy nicht winzig werden
     const availW = wrap.clientWidth;
     const w = availW > 0 ? Math.max(280, Math.min(880, Math.round(availW))) : 880;
@@ -924,21 +1322,22 @@
     const linePath = points.map((v,i) => `${i===0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`).join(' ');
     const areaPath = `${linePath} L ${toX(points.length-1).toFixed(1)} ${zeroY.toFixed(1)} L ${toX(0).toFixed(1)} ${zeroY.toFixed(1)} Z`;
     const finalVal = points[points.length-1];
-    const lineColor = finalVal >= 0 ? "#3FB68B" : "#E0575B";
+    const C_GREEN = cssVar("--green"), C_RED = cssVar("--red"), C_MUTE = cssVar("--text-mute"), C_GRID = cssVar("--border2");
+    const lineColor = finalVal >= 0 ? C_GREEN : C_RED;
 
     const dots = sorted.map((e, i) => {
       const isWin = e.pnl > 0;
-      const dotColor = isWin ? "#3FB68B" : e.pnl < 0 ? "#E0575B" : "#7C8792";
+      const dotColor = isWin ? C_GREEN : e.pnl < 0 ? C_RED : C_MUTE;
       return `<circle class="eq-dot" data-idx="${i}" cx="${toX(i).toFixed(1)}" cy="${toY(points[i]).toFixed(1)}" r="8" fill="transparent" stroke="none" />`;
     }).join('');
     const visibleDots = sorted.map((e, i) => {
-      const dotColor = e.pnl > 0 ? "#3FB68B" : e.pnl < 0 ? "#E0575B" : "#7C8792";
+      const dotColor = e.pnl > 0 ? C_GREEN : e.pnl < 0 ? C_RED : C_MUTE;
       return `<circle cx="${toX(i).toFixed(1)}" cy="${toY(points[i]).toFixed(1)}" r="2.5" fill="${dotColor}" />`;
     }).join('');
 
     wrap.innerHTML = `
       <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:auto; display:block;">
-        <line x1="${pad}" y1="${zeroY.toFixed(1)}" x2="${w-pad}" y2="${zeroY.toFixed(1)}" stroke="#232B34" stroke-width="1" stroke-dasharray="4 4" />
+        <line x1="${pad}" y1="${zeroY.toFixed(1)}" x2="${w-pad}" y2="${zeroY.toFixed(1)}" stroke="${C_GRID}" stroke-width="1" stroke-dasharray="4 4" />
         <path d="${areaPath}" fill="${lineColor}" opacity="0.12" stroke="none" />
         <path d="${linePath}" fill="none" stroke="${lineColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
         ${visibleDots}
@@ -946,7 +1345,7 @@
       </svg>
       <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-mute); margin-top:6px;">
         <span>Start</span>
-        <span>${points.length} Trade${points.length>1?'s':''} · Endstand: <b class="mono" style="color:${lineColor}">${fmtMoney(finalVal)}</b></span>
+        <span>${points.length} Trade${points.length>1?'s':''} · Endstand: <b class="mono" style="color:${lineColor}">${fmtVal(finalVal)}</b></span>
       </div>
     `;
 
@@ -967,12 +1366,12 @@
         tooltip.style.top = top + "px";
       };
       dot.addEventListener("mouseenter", () => {
-        tooltip.innerHTML = `${fmtDate(e.date)} · ${e.instrument}<br><span style="color:${e.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}</span>`;
+        tooltip.innerHTML = `${fmtDate(e.date)} · ${e.instrument}<br><span style="color:${e.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}${hasRR(e) ? ' · ' + fmtR(e.rr) : ''}</span><br><span style="color:var(--text-mute)">Stand: ${fmtVal(points[parseInt(dot.dataset.idx)])}</span>`;
         positionTooltip();
       });
       dot.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
       dot._showTip = () => {
-        tooltip.innerHTML = `${fmtDate(e.date)} · ${e.instrument}<br><span style="color:${e.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}</span>`;
+        tooltip.innerHTML = `${fmtDate(e.date)} · ${e.instrument}<br><span style="color:${e.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}${hasRR(e) ? ' · ' + fmtR(e.rr) : ''}</span><br><span style="color:var(--text-mute)">Stand: ${fmtVal(points[parseInt(dot.dataset.idx)])}</span>`;
         positionTooltip();
       };
     });
@@ -1061,9 +1460,9 @@
     worstLossEl.textContent = sorted.length ? worstLoss : "—";
     worstLossEl.title = worstLossRange ? fmtRange(worstLossRange) : "";
 
-    const best = entries.reduce((m, e) => e.pnl > m.pnl ? e : m, entries.length ? entries[0] : { pnl: -Infinity });
+    const best = entries.reduce((m, e) => val(e) > val(m) ? e : m, entries.length ? entries[0] : { pnl: -Infinity, rr: -Infinity });
     const bestTradeEl = document.getElementById("statBestTrade");
-    bestTradeEl.textContent = entries.length ? fmtMoney(best.pnl) : "—";
+    bestTradeEl.textContent = entries.length ? fmtVal(val(best)) : "—";
     bestTradeEl.title = entries.length ? `${fmtDate(best.date)} · ${best.instrument}` : "";
   }
 
@@ -1076,21 +1475,21 @@
     }
     const rows = tags.map(tag => {
       const list = entries.filter(e => e.tag === tag);
-      const total = list.reduce((s,e) => s + e.pnl, 0);
+      const total = list.reduce((s,e) => s + val(e), 0);
       const wins = list.filter(e => e.pnl > 0).length;
       const winRate = list.length ? (wins / list.length) * 100 : 0;
       return { tag, count: list.length, total, winRate };
     }).sort((a,b) => b.total - a.total);
 
     let html = `<table class="tag-table"><thead><tr>
-      <th>Setup</th><th>Trades</th><th>Winrate</th><th style="text-align:right;">P/L gesamt</th>
+      <th>Setup</th><th>Trades</th><th>Winrate</th><th style="text-align:right;">${isR() ? "R gesamt" : "P/L gesamt"}</th>
     </tr></thead><tbody>`;
     rows.forEach(r => {
       html += `<tr>
         <td><span class="tag-pill">${r.tag.replace(/</g,"&lt;")}</span></td>
         <td>${r.count}</td>
         <td>${r.winRate.toFixed(0)}%</td>
-        <td style="text-align:right;" class="mono ${r.total >= 0 ? 'pnl-pos' : 'pnl-neg'}">${r.total >= 0 ? '+' : ''}${fmtMoney(r.total)}</td>
+        <td style="text-align:right;" class="mono ${r.total >= 0 ? 'pnl-pos' : 'pnl-neg'}">${fmtVal(r.total, true)}</td>
       </tr>`;
     });
     html += `</tbody></table>`;
@@ -1219,16 +1618,51 @@
   document.getElementById("ruleCancelBtn").addEventListener("click", resetRuleForm);
 
   function renderAll() {
+    renderFormOptions();
     renderRiskGuard();
     renderJournal();
     renderCalendar();
     renderStats();
     renderRules();
+    renderPropfirm();
+    renderSettings();
+  }
+
+  function accountName(id) { const a = id && accounts.find(x => x.id === id); return a ? a.name : ""; }
+
+  // Instrument- und Konto-Auswahl im Trade-Formular
+  function renderFormOptions() {
+    const sel = document.getElementById("f_instrument");
+    const cur = sel.value;
+    sel.innerHTML = settings.instruments.map(i => `<option>${esc(i)}</option>`).join("");
+    if (cur && settings.instruments.includes(cur)) sel.value = cur;
+
+    const accSel = document.getElementById("f_account");
+    const active = accounts.filter(a => evaluateAccount(a).status === "active" || a.id === accSel.value);
+    accSel.innerHTML = `<option value="">— kein Konto —</option>` + active.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join("");
+    const want = accSel.dataset.touched ? accSel.value : settings.lastAccountId;
+    accSel.value = active.some(a => a.id === want) ? want : "";
+    document.getElementById("f_account_wrap").style.display = accounts.length ? "" : "none";
+  }
+  document.getElementById("f_account").addEventListener("change", (e) => { e.target.dataset.touched = "1"; });
+
+  function activateTab(name) {
+    const btn = document.querySelector(`.tab-btn[data-tab="${name}"]`) || document.querySelector('.tab-btn[data-tab="journal"]');
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    document.getElementById("equityTooltip").style.display = "none";
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    if (btn.scrollIntoView && btn.parentElement.scrollWidth > btn.parentElement.clientWidth) btn.scrollIntoView({ block: "nearest", inline: "center" });
+    if (btn.dataset.tab === "calendar") renderCalendar();
+    if (btn.dataset.tab === "stats") renderStats();
+    if (btn.dataset.tab === "regeln") renderRules();
+    if (btn.dataset.tab === "propfirm") renderPropfirm();
   }
 
   function resetForm() {
     document.getElementById("f_date").value = todayStr();
-    document.getElementById("f_instrument").value = "MES";
+    document.getElementById("f_instrument").value = settings.instruments[0];
     document.getElementById("f_direction").value = "long";
     document.getElementById("f_size").value = "1";
     document.getElementById("f_pnl").value = "";
@@ -1274,9 +1708,12 @@
       emotion: document.getElementById("f_emotion").value,
       notes: document.getElementById("f_notes").value.trim(),
       photos: [...pendingPhotos],
+      accountId: document.getElementById("f_account").value || undefined,
       createdAt: Date.now(),
     };
 
+    saveSettings({ lastAccountId: newEntry.accountId || "" });
+    delete document.getElementById("f_account").dataset.touched;
     const ok = saveEntries([...entries, newEntry]);
     const d = new Date(dateVal + "T00:00:00");
     calYear = d.getFullYear(); calMonth = d.getMonth();
@@ -1289,16 +1726,7 @@
   });
 
   document.querySelectorAll(".tab-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-      document.getElementById("equityTooltip").style.display = "none";
-      btn.classList.add("active");
-      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-      if (btn.dataset.tab === "calendar") renderCalendar();
-      if (btn.dataset.tab === "stats") renderStats();
-      if (btn.dataset.tab === "regeln") renderRules();
-    });
+    btn.addEventListener("click", () => activateTab(btn.dataset.tab));
   });
 
   document.getElementById("calPrev").addEventListener("click", () => { calMonth -= 1; if (calMonth < 0) { calMonth = 11; calYear -= 1; } renderCalendar(); });
@@ -1306,7 +1734,7 @@
 
   document.getElementById("exportJsonBtn").addEventListener("click", () => {
     // Backup-Format v2: Trades + Regeln + Tageslimit (Import versteht auch das alte reine Trade-Array)
-    const backup = { app: "trading-journal", version: 2, exportedAt: new Date().toISOString(), entries, rules, riskLimit };
+    const backup = { app: "trading-journal", version: 3, exportedAt: new Date().toISOString(), entries, rules, riskLimit, accounts, settings };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -1316,10 +1744,10 @@
   });
 
   document.getElementById("exportCsvBtn").addEventListener("click", () => {
-    const header = ["Datum","Instrument","Richtung","Kontrakte","Entry","Exit","P/L","RR","Tag","Emotion","Notizen"];
+    const header = ["Datum","Instrument","Richtung","Kontrakte","Entry","Exit","P/L","RR","Tag","Emotion","Notizen","Konto"];
     const rows = [...entries].sort((a,b)=> new Date(a.date)-new Date(b.date)).map(e => [
       e.date, e.instrument, e.direction, e.size, e.entry ?? "", e.exit ?? "", e.pnl, e.rr ?? "",
-      (e.tag||"").replace(/;/g,","), (e.emotion||""), (e.notes||"").replace(/[\r\n;]+/g," ")
+      (e.tag||"").replace(/;/g,","), (e.emotion||""), (e.notes||"").replace(/[\r\n;]+/g," "), accountName(e.accountId)
     ]);
     const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -1353,6 +1781,15 @@
           }
           const importedLimit = parseFloat(data.riskLimit);
           if ((riskLimit === null || isNaN(riskLimit)) && importedLimit > 0) saveRiskLimit(importedLimit);
+          if (Array.isArray(data.accounts)) {
+            const accIds = new Set(accounts.map(a => a.id));
+            const newAcc = data.accounts.filter(a => a && a.id && a.name && !accIds.has(a.id));
+            if (newAcc.length) saveAccounts([...accounts, ...newAcc]);
+          }
+          if (data.settings && typeof data.settings === "object" && confirm("Einstellungen aus dem Backup übernehmen (Design, Instrumente, Anzeige)?")) {
+            saveSettings({ ...data.settings, lastAccountId: settings.lastAccountId });
+            applyAppearance();
+          }
         }
         renderAll();
       } catch (err) { alert("Import fehlgeschlagen: Datei ist kein gültiges Journal-Backup."); }
@@ -1361,7 +1798,256 @@
     reader.readAsText(file);
   });
 
+  // ---------- Propfirm-Tab ----------
+  const pfMcResults = {};
+
+  function pfChart(acc, st) {
+    const pts = st.series;
+    if (pts.length < 2) return "";
+    const w = 600, h = 150, pad = 8;
+    const vals = pts.flatMap(p => [p.balance, p.floor]).concat([acc.start + acc.target]);
+    const min = Math.min(...vals), max = Math.max(...vals), range = (max - min) || 1;
+    const x = i => pad + i * (w - pad * 2) / (pts.length - 1);
+    const y = v => h - pad - (v - min) / range * (h - pad * 2);
+    const line = key => pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p[key]).toFixed(1)}`).join(" ");
+    const ty = y(acc.start + acc.target).toFixed(1);
+    return `<div class="pf-chart"><svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="height:130px;">
+      <line x1="${pad}" x2="${w - pad}" y1="${ty}" y2="${ty}" style="stroke:var(--green)" stroke-width="1" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>
+      <path d="${line("floor")}" fill="none" style="stroke:var(--red)" stroke-width="1.5" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>
+      <path d="${line("balance")}" fill="none" style="stroke:var(--gold)" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    </svg>
+    <div class="pf-small" style="display:flex; gap:14px; flex-wrap:wrap;">
+      <span><span class="legend-swatch" style="background:var(--gold)"></span>Kontostand</span>
+      <span><span class="legend-swatch" style="background:var(--red)"></span>Drawdown-Grenze</span>
+      <span><span class="legend-swatch" style="background:var(--green)"></span>Ziel</span>
+    </div></div>`;
+  }
+
+  function pfMetric(label, value, sub, barPct, barColor, valueColor) {
+    return `<div class="stat-card"><div class="stat-label">${label}</div>
+      <div class="stat-value" style="${valueColor ? `color:${valueColor}` : ""}">${value}</div>
+      ${barPct !== null && barPct !== undefined ? `<div class="pf-bar"><div style="width:${Math.max(0, Math.min(100, barPct)).toFixed(1)}%; background:${barColor}"></div></div>` : ""}
+      ${sub ? `<div class="pf-small">${sub}</div>` : ""}</div>`;
+  }
+
+  function renderPropfirm() {
+    const list = document.getElementById("pfList");
+    document.getElementById("pfEmptyState").style.display = accounts.length ? "none" : "block";
+    list.innerHTML = "";
+    [...accounts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).forEach(acc => {
+      const st = evaluateAccount(acc);
+      const profit = st.balance - acc.start;
+      const statusLabel = { active: "Läuft", passed: "Bestanden", failed: "Nicht bestanden" }[st.status];
+      const buffer = st.balance - st.floor;
+      const consPct = profit > 0 ? st.bestDay / profit * 100 : null;
+      const unassigned = st.status === "active" ? entries.filter(e => !e.accountId && (!acc.startDate || e.date >= acc.startDate)).length : 0;
+      const rulesTxt = [
+        `${fmtMoney(acc.start)} Start`, `Ziel ${fmtMoney(acc.target)}`, `DD ${fmtMoney(acc.maxDD)} ${DD_LABELS[acc.ddType]}`,
+        acc.dll ? `Tageslimit ${fmtMoney(acc.dll)} (${acc.dllHard ? "hard" : "soft"})` : null,
+        acc.consistency ? `Konsistenz ${acc.consistency}%` : null,
+        acc.minDays ? `min. ${acc.minDays} Tage` : null,
+        acc.maxMinis ? `max. ${acc.maxMinis} Minis / ${acc.maxMinis * 10} Micros` : null,
+      ].filter(Boolean).join(" · ");
+
+      const alerts = [];
+      if (st.status === "failed") alerts.push(`<div class="pf-alert bad">✕ ${st.reason}${st.failDate ? " am " + fmtDate(st.failDate) : ""}</div>`);
+      if (st.status === "passed") alerts.push(`<div class="pf-alert good">✓ Challenge bestanden am ${fmtDate(st.passDate)}</div>`);
+      if (st.status === "active" && profit >= acc.target && !pfConsistencyOk(acc, st)) alerts.push(`<div class="pf-alert warn">Ziel erreicht, aber Konsistenzregel verletzt: bester Tag ${fmtMoney(st.bestDay)} = ${consPct.toFixed(0)}% des Gewinns (max. ${acc.consistency}%). Weiter traden, bis der Anteil sinkt.</div>`);
+      if (st.status === "active" && profit >= acc.target && pfConsistencyOk(acc, st) && st.days < (acc.minDays || 0)) alerts.push(`<div class="pf-alert warn">Ziel erreicht – noch ${acc.minDays - st.days} Handelstag(e) bis zur Mindestanzahl.</div>`);
+      if (st.dllDays.length) alerts.push(`<div class="pf-alert warn">Tagesverlust-Limit erreicht an: ${st.dllDays.map(fmtDate).join(", ")}</div>`);
+      if (st.contractViolations.length) alerts.push(`<div class="pf-alert warn">Zu viele Kontrakte bei ${st.contractViolations.length} Trade(s): ${st.contractViolations.slice(0, 5).map(e => `${fmtDate(e.date)} ${esc(e.instrument)} ×${e.size}`).join(", ")}${st.contractViolations.length > 5 ? " …" : ""}</div>`);
+      if (st.ignoredTrades) alerts.push(`<div class="pf-alert warn">${st.ignoredTrades} Trade(s) nach Abschluss der Challenge werden nicht mehr gezählt.</div>`);
+
+      const todayTxt = acc.dll ? `${fmtMoney(st.todayPnl)} / -${fmtMoney(acc.dll)}` : fmtMoney(st.todayPnl);
+      const todayPct = acc.dll && st.todayPnl < 0 ? -st.todayPnl / acc.dll * 100 : 0;
+      const mc = pfMcResults[acc.id];
+
+      const card = document.createElement("div");
+      card.className = "pf-card " + st.status;
+      card.innerHTML = `
+        <div class="pf-top">
+          <div>
+            <div class="pf-name">${esc(acc.name)}<span class="pf-badge ${st.status}">${statusLabel}</span></div>
+            <div class="pf-sub">${esc(rulesTxt)}${acc.startDate ? " · ab " + fmtDate(acc.startDate) : ""}</div>
+          </div>
+          <div class="pf-actions">
+            ${unassigned ? `<button class="btn-ghost btn-sm" data-pf-assign="${acc.id}">${unassigned} Trade(s) zuordnen</button>` : ""}
+            <button class="btn-ghost btn-sm" data-pf-edit="${acc.id}">Bearbeiten</button>
+            <button class="btn-icon" data-pf-del="${acc.id}" title="Konto löschen">✕</button>
+          </div>
+        </div>
+        ${alerts.join("")}
+        <div class="pf-metrics">
+          ${pfMetric("Kontostand", fmtMoney(st.balance), `${st.trades.length} Trade(s) · ${st.days} Handelstag(e)`, null, null, profit > 0 ? "var(--green)" : profit < 0 ? "var(--red)" : null)}
+          ${pfMetric("Gewinnziel", `${(Math.max(0, profit) / acc.target * 100).toFixed(0)}%`, `${fmtMoney(profit)} von ${fmtMoney(acc.target)}`, profit / acc.target * 100, "var(--green)")}
+          ${pfMetric("Puffer bis Drawdown", fmtMoney(buffer), `Grenze ${fmtMoney(st.floor)}`, buffer / acc.maxDD * 100, buffer / acc.maxDD < 0.3 ? "var(--red)" : buffer / acc.maxDD < 0.6 ? "var(--amber)" : "var(--green)", buffer / acc.maxDD < 0.3 ? "var(--red)" : null)}
+          ${pfMetric("Heute", todayTxt, acc.dll ? "Tagesverlust-Limit" : "kein Tageslimit", acc.dll ? todayPct : null, todayPct >= 70 ? "var(--red)" : "var(--amber)", st.todayPnl < 0 ? "var(--red)" : st.todayPnl > 0 ? "var(--green)" : null)}
+          ${pfMetric("Konsistenz", acc.consistency ? (consPct !== null ? consPct.toFixed(0) + "%" : "—") : "keine Regel", acc.consistency ? `bester Tag ${fmtMoney(st.bestDay)} · max. ${acc.consistency}%` : "", acc.consistency && consPct !== null ? consPct / acc.consistency * 100 : null, consPct !== null && consPct > acc.consistency ? "var(--red)" : "var(--green)")}
+          ${pfMetric("Handelstage", `${st.days}${acc.minDays ? " / " + acc.minDays : ""}`, acc.minDays ? "Mindestanzahl" : "kein Minimum", acc.minDays ? st.days / acc.minDays * 100 : null, "var(--gold)")}
+        </div>
+        ${pfChart(acc, st)}
+        <div class="pf-mc">
+          <div class="section-title" style="margin-bottom:6px;">Bestehens-Wahrscheinlichkeit (Monte Carlo)</div>
+          <div class="pf-hint" style="margin-bottom:10px;">Spielt 5.000 Challenges mit zufällig gezogenen echten Handelstagen aus deinem Journal durch (inkl. Drawdown, Tageslimit, Konsistenz). Ergebnis basiert nur auf deiner Historie – keine Garantie.</div>
+          <div class="pf-mc-opts">
+            <div><label class="field-label">Datenbasis</label>
+              <select data-mc-src="${acc.id}"><option value="all">Alle Trades</option><option value="acc">Nur dieses Konto</option></select></div>
+            <div><label class="field-label">Positionsgröße ×</label><input type="number" data-mc-scale="${acc.id}" value="1" min="0.1" step="0.1"></div>
+            <div><label class="field-label">Max. Handelstage</label><input type="number" data-mc-days="${acc.id}" value="60" min="1" step="1"></div>
+            <label class="pf-mc-check"><input type="checkbox" data-mc-cur="${acc.id}" ${st.status === "active" && st.trades.length ? "checked" : ""}>ab aktuellem Stand</label>
+          </div>
+          <button class="btn-ghost btn-sm" data-mc-run="${acc.id}" type="button">Simulation starten</button>
+          <div data-mc-out="${acc.id}">${mc ? renderMc(mc) : ""}</div>
+        </div>`;
+      list.appendChild(card);
+    });
+
+    list.querySelectorAll("[data-pf-edit]").forEach(b => b.addEventListener("click", () => openPfForm(accounts.find(a => a.id === b.dataset.pfEdit))));
+    list.querySelectorAll("[data-pf-del]").forEach(b => b.addEventListener("click", () => {
+      const acc = accounts.find(a => a.id === b.dataset.pfDel);
+      if (!acc || !confirm(`Konto „${acc.name}“ löschen? Die Trades bleiben im Journal erhalten.`)) return;
+      saveAccounts(accounts.filter(a => a.id !== acc.id));
+      saveEntries(entries.map(e => e.accountId === acc.id ? { ...e, accountId: undefined } : e));
+      renderAll();
+    }));
+    list.querySelectorAll("[data-pf-assign]").forEach(b => b.addEventListener("click", () => {
+      const acc = accounts.find(a => a.id === b.dataset.pfAssign);
+      const ids = new Set(entries.filter(e => !e.accountId && (!acc.startDate || e.date >= acc.startDate)).map(e => e.id));
+      if (!confirm(`${ids.size} Trade(s) ohne Konto${acc.startDate ? " ab " + fmtDate(acc.startDate) : ""} dem Konto „${acc.name}“ zuordnen?`)) return;
+      saveEntries(entries.map(e => ids.has(e.id) ? { ...e, accountId: acc.id } : e));
+      renderAll();
+    }));
+    list.querySelectorAll("[data-mc-run]").forEach(b => b.addEventListener("click", () => {
+      const id = b.dataset.mcRun, acc = accounts.find(a => a.id === id);
+      const src = list.querySelector(`[data-mc-src="${id}"]`).value;
+      const scale = parseFloat(list.querySelector(`[data-mc-scale="${id}"]`).value) || 1;
+      const maxDays = parseInt(list.querySelector(`[data-mc-days="${id}"]`).value) || 60;
+      const fromCurrent = list.querySelector(`[data-mc-cur="${id}"]`).checked;
+      const trades = src === "acc" ? accountTrades(acc) : entries;
+      const res = monteCarlo(acc, trades, { scale, maxDays, fromCurrent });
+      res.opts = { src, scale, maxDays, fromCurrent };
+      pfMcResults[id] = res;
+      list.querySelector(`[data-mc-out="${id}"]`).innerHTML = renderMc(res);
+    }));
+    // gewählte MC-Optionen nach dem Neuzeichnen wiederherstellen
+    Object.entries(pfMcResults).forEach(([id, r]) => {
+      if (!r.opts) return;
+      const q = sel => list.querySelector(sel);
+      if (q(`[data-mc-src="${id}"]`)) {
+        q(`[data-mc-src="${id}"]`).value = r.opts.src; q(`[data-mc-scale="${id}"]`).value = r.opts.scale;
+        q(`[data-mc-days="${id}"]`).value = r.opts.maxDays; q(`[data-mc-cur="${id}"]`).checked = r.opts.fromCurrent;
+      }
+    });
+  }
+
+  function renderMc(r) {
+    if (r.error) return `<div class="pf-alert warn" style="margin-top:10px;">${r.error}</div>`;
+    const pct = v => (v * 100).toFixed(1).replace(".", ",") + "%";
+    return `<div class="pf-mc-result">
+      ${pfMetric("Bestanden", pct(r.pass), r.medianDays ? `Median ${r.medianDays} Handelstage` : "", r.pass * 100, "var(--green)", "var(--green)")}
+      ${pfMetric("Verloren", pct(r.fail), "Drawdown / Tageslimit", r.fail * 100, "var(--red)", "var(--red)")}
+      ${pfMetric("Offen", pct(r.open), `nach ${r.opts ? r.opts.maxDays : ""} Tagen`, r.open * 100, "var(--text-mute)")}
+      ${pfMetric("Basis", `${r.poolDays} Tage`, `Ø Tag ${fmtMoney(r.avgDay)}`, null)}
+    </div>`;
+  }
+
+  function fillPfForm(p) {
+    const set = (id, v) => { document.getElementById(id).value = v === null || v === undefined ? "" : v; };
+    set("pf_start", p.start); set("pf_target", p.target); set("pf_maxDD", p.maxDD); set("pf_ddType", p.ddType || "eod");
+    set("pf_lock", p.lockOffset); set("pf_dll", p.dll); set("pf_dllHard", p.dllHard ? "hard" : "soft");
+    set("pf_consistency", p.consistency); set("pf_minDays", p.minDays || 0); set("pf_maxMinis", p.maxMinis);
+  }
+  function openPfForm(acc) {
+    const form = document.getElementById("pfForm");
+    document.getElementById("pf_preset").innerHTML = PF_PRESETS.map(p => `<option value="${p.id}">${p.label}</option>`).join("");
+    document.getElementById("pfFormError").style.display = "none";
+    if (acc) {
+      document.getElementById("pfFormTitle").textContent = "Konto bearbeiten";
+      document.getElementById("pf_editId").value = acc.id;
+      document.getElementById("pf_preset").value = acc.preset || "custom";
+      document.getElementById("pf_name").value = acc.name;
+      document.getElementById("pf_startDate").value = acc.startDate || "";
+      fillPfForm(acc);
+    } else {
+      const p = PF_PRESETS.find(x => x.id === "lflex50");
+      document.getElementById("pfFormTitle").textContent = "Neues Konto";
+      document.getElementById("pf_editId").value = "";
+      document.getElementById("pf_preset").value = p.id;
+      document.getElementById("pf_name").value = p.label;
+      document.getElementById("pf_startDate").value = todayStr();
+      fillPfForm(p);
+    }
+    form.classList.add("open");
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  document.getElementById("pfNewBtn").addEventListener("click", () => openPfForm(null));
+  document.getElementById("pfCancelBtn").addEventListener("click", () => document.getElementById("pfForm").classList.remove("open"));
+  document.getElementById("pf_preset").addEventListener("change", (e) => {
+    const p = PF_PRESETS.find(x => x.id === e.target.value);
+    if (!p || p.id === "custom") return;
+    fillPfForm(p);
+    const nameEl = document.getElementById("pf_name");
+    if (!nameEl.value || PF_PRESETS.some(x => x.label === nameEl.value)) nameEl.value = p.label;
+  });
+  document.getElementById("pfSaveBtn").addEventListener("click", () => {
+    const num = id => { const v = document.getElementById(id).value; return v === "" ? null : parseFloat(v); };
+    const err = document.getElementById("pfFormError");
+    const acc = {
+      name: document.getElementById("pf_name").value.trim(),
+      preset: document.getElementById("pf_preset").value,
+      startDate: document.getElementById("pf_startDate").value,
+      start: num("pf_start"), target: num("pf_target"), maxDD: num("pf_maxDD"),
+      ddType: document.getElementById("pf_ddType").value,
+      lockOffset: num("pf_lock"), dll: num("pf_dll"), dllHard: document.getElementById("pf_dllHard").value === "hard",
+      consistency: num("pf_consistency"), minDays: num("pf_minDays") || 0, maxMinis: num("pf_maxMinis"),
+    };
+    if (!acc.name || !(acc.start > 0) || !(acc.target > 0) || !(acc.maxDD > 0)) {
+      err.textContent = "Bitte Name, Startkapital, Gewinnziel und Max. Drawdown ausfüllen."; err.style.display = "block"; return;
+    }
+    const editId = document.getElementById("pf_editId").value;
+    if (editId) saveAccounts(accounts.map(a => a.id === editId ? { ...a, ...acc } : a));
+    else saveAccounts([...accounts, { id: uid(), createdAt: Date.now(), ...acc }]);
+    if (editId) delete pfMcResults[editId];
+    document.getElementById("pfForm").classList.remove("open");
+    renderAll();
+  });
+
+  // ---------- Einstellungen-Tab ----------
+  function renderSettings() {
+    const segs = { setTheme: "theme", setFontSize: "fontSize", setPlMode: "plMode" };
+    Object.entries(segs).forEach(([id, key]) => {
+      document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle("active", b.dataset.val === settings[key]));
+    });
+    document.getElementById("setAccent").innerHTML = Object.entries(ACCENTS).map(([k, c]) =>
+      `<button type="button" class="swatch ${settings.accent === k ? "active" : ""}" data-val="${k}" title="${k}" style="background:${c}"></button>`).join("");
+    document.querySelectorAll("#setAccent .swatch").forEach(b => b.addEventListener("click", () => { saveSettings({ accent: b.dataset.val }); applyAppearance(); renderAll(); }));
+    document.getElementById("setStartTab").value = settings.startTab;
+    document.getElementById("setHideWeekends").checked = !!settings.hideWeekends;
+    const ta = document.getElementById("setInstruments");
+    if (document.activeElement !== ta) ta.value = settings.instruments.join("\n");
+  }
+  [["setTheme", "theme"], ["setFontSize", "fontSize"], ["setPlMode", "plMode"]].forEach(([id, key]) => {
+    document.querySelectorAll(`#${id} button`).forEach(b => b.addEventListener("click", () => {
+      saveSettings({ [key]: b.dataset.val }); applyAppearance(); renderAll();
+    }));
+  });
+  document.getElementById("setStartTab").addEventListener("change", (e) => saveSettings({ startTab: e.target.value }));
+  document.getElementById("setHideWeekends").addEventListener("change", (e) => { saveSettings({ hideWeekends: e.target.checked }); renderCalendar(); });
+  document.getElementById("setInstrumentsSave").addEventListener("click", () => {
+    const list = document.getElementById("setInstruments").value.split(/[\n,;]+/).map(x => x.trim()).filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+    saveSettings({ instruments: list.length ? list : DEFAULT_INSTRUMENTS });
+    document.getElementById("setInstruments").blur();
+    renderAll();
+  });
+  document.getElementById("setInstrumentsReset").addEventListener("click", () => {
+    saveSettings({ instruments: [...DEFAULT_INSTRUMENTS] });
+    document.getElementById("setInstruments").value = DEFAULT_INSTRUMENTS.join("\n");
+    renderAll();
+  });
+
+  applyAppearance();
   renderAll();
+  activateTab(settings.startTab);
 
   // PWA: Service Worker nur über http(s) registrieren – in Electron (file://) wird das übersprungen.
   if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {

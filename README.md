@@ -6,11 +6,31 @@ Läuft als Desktop-App (Electron) **und** als installierbare Web-App (PWA) auf d
 - **Kein Server, keine Cloud, kein Login.** Alle Daten liegen im `localStorage` des jeweiligen Geräts/Browsers.
 - **Kein automatischer Sync.** Desktop und Handy haben jeweils eigene Daten.
   Übertragung nur manuell: **JSON-Backup** auf Gerät A → Datei auf Gerät B → **Importieren**
-- Das JSON-Backup enthält **Trades (inkl. Fotos), Regeln/Strategien und das Tagesverlust-Limit**.
-  Der Import fügt nur Trades/Regeln hinzu, deren ID noch nicht existiert (nichts wird doppelt oder
-  überschrieben); das Limit wird nur übernommen, wenn auf dem Gerät noch keins gesetzt ist.
+- Das JSON-Backup enthält **Trades (inkl. Fotos), Regeln/Strategien, Tagesverlust-Limit,
+  Propfirm-Konten und Einstellungen**. Der Import fügt nur Trades/Regeln/Konten hinzu, deren ID noch
+  nicht existiert (nichts wird doppelt oder überschrieben); das Limit wird nur übernommen, wenn auf dem
+  Gerät noch keins gesetzt ist; bei Einstellungen wird nachgefragt.
   Alte Backups (nur Trades) lassen sich weiterhin importieren. Das neue Format kann aber nur die
-  neue App-Version (ab 1.5.0) lesen – also auch die Desktop-App neu bauen.
+  neue App-Version lesen – also auch die Desktop-App neu bauen.
+
+## Funktionen
+
+- **Journal, Kalender, Statistik, Regeln, Risk Guard** wie bisher.
+- **Propfirm-Simulation** (Tab „Propfirm“): beliebig viele Challenge-Konten mit Startkapital, Gewinnziel,
+  Max. Drawdown (Trailing EOD / Trailing intraday / statisch, optionaler Trailing-Stopp bei Start + X),
+  Tagesverlust-Limit (soft/hard), Konsistenzregel, Mindest-Handelstage und Max. Kontrakte
+  (Micros zählen ×0,1). Trades werden beim Eintragen einem Konto zugeordnet und live gegen die Regeln
+  gerechnet → Status *Läuft / Bestanden / Nicht bestanden*, Puffer bis Drawdown, Verlaufschart.
+  Vorlagen für LucidFlex/LucidPro 25K–150K (Werte aus Drittquellen, Stand Nov. 2026 – vor dem Kauf auf
+  lucidtrading.com prüfen, alles editierbar).
+  - *Intraday-Trailing* wird pro abgeschlossenem Trade gerechnet; offene (unrealisierte) Gewinne kennt
+    das Journal nicht.
+- **Monte-Carlo-Simulation** pro Konto: 5.000 Challenges aus zufällig gezogenen echten Handelstagen
+  (mit ihrer Trade-Reihenfolge) → Wahrscheinlichkeit bestehen/verlieren/offen, Median-Dauer.
+  Optional nur Trades des Kontos, Positionsgröße skalieren, ab aktuellem Kontostand.
+- **Einstellungen** (Tab „Einstellungen“): Design Hell/Dunkel/System, Akzentfarbe, Schriftgröße,
+  Ergebnis in $ oder R (R = Summe der eingetragenen RR-Werte; Trades ohne RR zählen 0R), Start-Tab,
+  Wochenenden im Kalender ausblenden, eigene Instrumentenliste.
 
 ```
 app/
