@@ -1,5 +1,16 @@
 # Trading Journal
 
+## ⬇ Download (Linux)
+
+**[TradingJournal-linux-amd64.deb herunterladen](https://github.com/tringl-a/tringl/releases/latest/download/TradingJournal-linux-amd64.deb)**
+– zeigt immer auf die neueste Version.
+
+Installieren: Datei im Dateimanager per Rechtsklick → **Öffnen mit → Discover** → **Installieren**
+(oder Terminal: `sudo apt install ./TradingJournal-linux-amd64.deb`). Für ein Update genauso – die Daten bleiben erhalten.
+
+Das Paket wird bei jeder Änderung an der App auf `main` automatisch von GitHub Actions gebaut
+(`.github/workflows/release-linux.yml`) und als Release `v<Version>` veröffentlicht.
+
 Persönliches Trading-Journal als **eine einzige HTML-Datei** (`app/index.html`).
 Läuft als Desktop-App (Electron) **und** als installierbare Web-App (PWA) auf dem Handy.
 
