@@ -1,0 +1,19 @@
+{
+  "name": "tradingjournal",
+  "productName": "Trading Journal",
+  "version": "1.4.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package-win": "electron-packager . TradingJournal --platform=win32 --arch=x64 --icon=app/icon.ico --out=dist --overwrite --app-version=1.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^30.5.1",
+    "electron-installer-debian": "^4.0.0",
+    "electron-packager": "^17.1.2"
+  }
+}

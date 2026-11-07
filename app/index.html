@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Journal</title>
+<style>
+  :root {
+    --bg: #0B0F14;
+    --panel: #131920;
+    --border: #1D242C;
+    --border2: #232B34;
+    --text: #E7ECEF;
+    --text-dim: #B8C0C8;
+    --text-mute: #7C8792;
+    --text-faint: #4A545F;
+    --gold: #D4A54A;
+    --gold-hover: #E0B563;
+    --green: #3FB68B;
+    --green-dim: #1E4536;
+    --red: #E0575B;
+    --red-dim: #4A2226;
+    --amber: #E0A957;
+    --amber-dim: #4A3B1E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  #app { max-width: 960px; margin: 0 auto; padding: 32px 24px 60px; }
+  .header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.12em; color: var(--text-mute); text-transform: uppercase; margin-bottom: 4px; }
+  .total-pnl { font-size: 26px; font-weight: 700; font-family: 'Consolas', 'JetBrains Mono', monospace; }
+  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .btn { background: var(--gold); color: var(--bg); border: none; border-radius: 6px; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: var(--gold-hover); }
+  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border2); border-radius: 6px; padding: 10px 18px; font-size: 13px; cursor: pointer; }
+  .btn-ghost:hover { border-color: #3A4450; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+  .btn-icon { background: none; border: none; color: var(--text-faint); cursor: pointer; padding: 4px; display: flex; }
+  .btn-icon:hover { color: var(--red); }
+
+  #storageBanner { display: none; background: var(--red-dim); border: 1px solid var(--red); color: #F3C6C8; border-radius: 6px; padding: 10px 14px; font-size: 12px; margin-bottom: 14px; }
+
+  .riskbar-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; }
+  .riskbar-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 8px; }
+  .riskbar-label { color: var(--text-mute); }
+  .riskbar-value { font-family: 'Consolas', monospace; font-weight: 600; }
+  .riskbar-track { height: 8px; border-radius: 4px; background: #0F141A; overflow: hidden; }
+  .riskbar-fill { height: 100%; border-radius: 4px; transition: width 0.25s ease; }
+  .riskbar-msg { font-size: 11px; margin-top: 7px; }
+  .risk-edit-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .risk-edit-row input { max-width: 140px; }
+  .risk-set-link { background: none; border: none; color: var(--text-mute); font-size: 11px; text-decoration: underline; cursor: pointer; padding: 0; }
+  .risk-set-link:hover { color: var(--gold); }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .tab-btn { background: none; border: none; color: var(--text-mute); padding: 10px 4px; margin-right: 20px; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--gold); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 6px; }
+  .stat-value { font-size: 17px; font-weight: 600; font-family: 'Consolas', 'JetBrains Mono', monospace; }
+
+  .form-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 22px; display: none; }
+  .form-panel.open { display: block; }
+  .form-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  label.field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 5px; display: block; }
+  input, select, textarea { background: #0F141A; border: 1px solid var(--border2); border-radius: 6px; color: var(--text); padding: 9px 10px; font-size: 13px; font-family: inherit; outline: none; width: 100%; }
+  input:focus, select:focus, textarea:focus { border-color: var(--gold); }
+  textarea { resize: vertical; }
+  ::placeholder { color: var(--text-faint); }
+
+  .radio-row { display: flex; gap: 18px; margin-bottom: 12px; font-size: 12px; }
+  .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-dim); }
+  .preview { font-size: 12px; color: var(--text-mute); margin-bottom: 12px; }
+  .preview b { font-family: 'Consolas', monospace; }
+  .error-msg { color: var(--red); font-size: 12px; margin-bottom: 12px; }
+  .form-actions { display: flex; gap: 8px; }
+
+  .empty-state { text-align: center; padding: 50px 0; color: var(--text-faint); font-size: 13px; }
+
+  .filter-row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .tag-chip { background: var(--panel); border: 1px solid var(--border2); color: var(--text-dim); border-radius: 999px; padding: 5px 12px; font-size: 11px; cursor: pointer; }
+  .tag-chip.active { border-color: var(--gold); color: var(--gold); background: #1D1A11; }
+
+  table { width: 100%; border-collapse: collapse; }
+  .table-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  thead th { text-align: left; padding: 10px 14px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); border-bottom: 1px solid var(--border); font-weight: 500; }
+  tbody td { padding: 10px 14px; font-size: 12px; border-bottom: 1px solid #161B22; vertical-align: middle; }
+  tbody tr:hover { background: var(--panel); }
+  tbody tr:last-child td { border-bottom: none; }
+  .mono { font-family: 'Consolas', 'JetBrains Mono', monospace; }
+  .dir-long { color: var(--green); }
+  .dir-short { color: var(--red); }
+  .pnl-pos { color: var(--green); font-weight: 600; }
+  .pnl-neg { color: var(--red); font-weight: 600; }
+  .notes-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-mute); }
+  .tag-pill { display: inline-block; background: #1A2029; border: 1px solid var(--border2); color: var(--text-mute); border-radius: 999px; padding: 2px 8px; font-size: 10px; }
+
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .cal-nav { display: flex; align-items: center; gap: 12px; }
+  .cal-nav button { background: var(--panel); border: 1px solid var(--border2); color: var(--text-dim); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-size: 14px; }
+  .cal-nav button:hover { border-color: var(--gold); color: var(--gold); }
+  .cal-month-label { font-size: 15px; font-weight: 700; min-width: 160px; text-align: center; }
+  .cal-month-total { font-family: 'Consolas', monospace; font-size: 13px; font-weight: 600; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-dow { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); text-align: center; padding-bottom: 4px; }
+  .cal-cell { aspect-ratio: 1 / 0.85; border-radius: 7px; border: 1px solid var(--border); background: var(--panel); padding: 6px 7px; position: relative; }
+  .cal-cell.empty { background: transparent; border-color: transparent; }
+  .cal-cell.win { background: var(--green-dim); border-color: #2C6B50; }
+  .cal-cell.loss { background: var(--red-dim); border-color: #7A3336; }
+  .cal-cell.flat { background: #1A2029; border-color: var(--border2); }
+  .cal-daynum { font-size: 11px; color: var(--text-mute); }
+  .cal-cell.win .cal-daynum, .cal-cell.loss .cal-daynum { color: var(--text-dim); }
+  .cal-pnl { font-family: 'Consolas', monospace; font-size: 11px; font-weight: 700; margin-top: 4px; }
+  .cal-cell.win .cal-pnl { color: var(--green); }
+  .cal-cell.loss .cal-pnl { color: var(--red); }
+  .cal-trades { font-size: 9px; color: var(--text-faint); margin-top: 2px; }
+  .cal-legend { display: flex; gap: 16px; margin-top: 16px; font-size: 11px; color: var(--text-mute); align-items: center; }
+  .legend-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
+
+  .section-title { font-size: 13px; font-weight: 700; color: var(--text-dim); margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-block { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 20px; }
+  .streak-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tag-table th, .tag-table td { padding: 8px 12px; font-size: 12px; }
+  .tag-table thead th { border-bottom: 1px solid var(--border); color: var(--text-mute); font-size: 10px; text-transform: uppercase; }
+  .tag-table tbody td { border-bottom: 1px solid #161B22; }
+  .tag-table tbody tr:last-child td { border-bottom: none; }
+
+  .footer-note { margin-top: 28px; font-size: 11px; color: var(--text-faint); text-align: center; }
+  #fileImportInput { display: none; }
+
+  .rule-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin-bottom: 14px; }
+  .rule-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 10px; }
+  .rule-name { font-size: 14px; font-weight: 700; color: var(--gold); }
+  .rule-text { font-size: 13px; color: var(--text-dim); white-space: pre-wrap; line-height: 1.5; }
+  .rule-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .rule-field-block { margin-bottom: 10px; }
+  .rule-field-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 3px; }
+
+  .checklist-block { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border2); }
+  .checklist-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-bottom: 8px; }
+  .checklist-item { display: flex; align-items: flex-start; gap: 9px; padding: 7px 0; cursor: pointer; }
+  .checklist-item input[type="checkbox"] { width: 16px; height: 16px; margin-top: 1px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }
+  .checklist-item-text { font-size: 12px; color: var(--text-dim); }
+  .checklist-item-text b { color: var(--text); }
+  .checklist-item.done .checklist-item-text { color: var(--text-faint); text-decoration: line-through; }
+  .checklist-ready { font-size: 12px; font-weight: 600; margin-top: 10px; padding: 8px 10px; border-radius: 6px; }
+  .checklist-ready.yes { background: var(--green-dim); color: var(--green); }
+  .checklist-ready.no { background: #1A2029; color: var(--text-mute); }
+  .checklist-reset { background: none; border: none; color: var(--text-mute); font-size: 11px; text-decoration: underline; cursor: pointer; padding: 0; margin-top: 8px; }
+  .checklist-reset:hover { color: var(--gold); }
+
+  .cal-photo-icon { position: absolute; top: 5px; right: 6px; font-size: 11px; cursor: pointer; filter: drop-shadow(0 0 1px #000); }
+  .photo-input-hint { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+  .photo-thumb-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .photo-thumb { width: 46px; height: 46px; object-fit: cover; border-radius: 5px; border: 1px solid var(--border2); }
+  .photo-thumb-wrap { position: relative; }
+  .photo-thumb-remove { position: absolute; top: -5px; right: -5px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 15px; height: 15px; font-size: 9px; line-height: 15px; text-align: center; cursor: pointer; padding: 0; }
+
+  .row-photo-icon { cursor: pointer; margin-left: 6px; }
+
+  #photoModal { display: none; position: fixed; inset: 0; background: rgba(6,8,10,0.85); z-index: 100; align-items: center; justify-content: center; padding: 30px; }
+  #photoModal.open { display: flex; }
+  .photo-modal-inner { background: var(--panel); border: 1px solid var(--border2); border-radius: 10px; padding: 20px; max-width: 720px; max-height: 85vh; overflow-y: auto; width: 100%; }
+  .photo-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .photo-modal-title { font-size: 14px; font-weight: 700; }
+  .photo-modal-close { background: none; border: none; color: var(--text-mute); font-size: 20px; cursor: pointer; line-height: 1; }
+  .photo-modal-close:hover { color: var(--text); }
+  .photo-modal-entry { margin-bottom: 16px; }
+  .photo-modal-entry-label { font-size: 12px; color: var(--text-mute); margin-bottom: 6px; }
+  .photo-modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+  .photo-modal-grid img { width: 100%; border-radius: 6px; border: 1px solid var(--border2); cursor: zoom-in; }
+
+  .equity-tooltip { position: fixed; background: #0F141A; border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: var(--text); pointer-events: none; display: none; white-space: nowrap; z-index: 200; font-family: 'Consolas', monospace; box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
+  #equityChartWrap { position: relative; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div>
+      <div class="eyebrow">Trading Journal</div>
+      <div class="total-pnl" id="totalPnl">—</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-ghost btn-sm" id="exportJsonBtn">JSON-Backup</button>
+      <button class="btn-ghost btn-sm" id="exportCsvBtn">CSV-Export</button>
+      <button class="btn-ghost btn-sm" id="importBtn">Importieren</button>
+      <input type="file" id="fileImportInput" accept="application/json">
+      <button class="btn" id="toggleFormBtn">+ Trade eintragen</button>
+    </div>
+  </div>
+
+  <div id="storageBanner"></div>
+
+  <div class="riskbar-wrap" id="riskbarWrap">
+    <div class="riskbar-top">
+      <span class="riskbar-label">Tagesverlust-Limit (Risk Guard)</span>
+      <span class="riskbar-value" id="riskbarValue">nicht gesetzt</span>
+    </div>
+    <div class="riskbar-track"><div class="riskbar-fill" id="riskbarFill" style="width:0%; background:var(--border2);"></div></div>
+    <div class="riskbar-msg" id="riskbarMsg"></div>
+    <div id="riskEditPanel" style="display:none;" class="risk-edit-row">
+      <input type="number" id="riskLimitInput" placeholder="z.B. 500" min="0" step="10">
+      <button class="btn-sm btn" id="riskSaveBtn" type="button">Speichern</button>
+      <button class="risk-set-link" id="riskClearBtn" type="button">Limit entfernen</button>
+    </div>
+    <div style="margin-top:6px;"><button class="risk-set-link" id="riskToggleBtn" type="button">Limit einstellen</button></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="journal">Journal</button>
+    <button class="tab-btn" data-tab="calendar">Kalender</button>
+    <button class="tab-btn" data-tab="stats">Statistik</button>
+    <button class="tab-btn" data-tab="regeln">Regeln</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-journal">
+    <div class="stats">
+      <div class="stat-card"><div class="stat-label">Trades</div><div class="stat-value" id="statCount">0</div></div>
+      <div class="stat-card"><div class="stat-label">Winrate</div><div class="stat-value" id="statWinrate">—</div></div>
+      <div class="stat-card"><div class="stat-label">Ø Gewinn</div><div class="stat-value" id="statAvgWin" style="color:var(--green)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Ø Verlust</div><div class="stat-value" id="statAvgLoss" style="color:var(--red)">—</div></div>
+      <div class="stat-card"><div class="stat-label">Ø RR</div><div class="stat-value" id="statAvgRR">—</div></div>
+    </div>
+
+    <form class="form-panel" id="entryForm">
+      <div class="form-grid3">
+        <div>
+          <label class="field-label">Datum</label>
+          <input type="date" id="f_date" required>
+        </div>
+        <div>
+          <label class="field-label">Instrument</label>
+          <select id="f_instrument">
+            <option>MES</option><option>MNQ</option><option>ES</option><option>NQ</option><option>MYM</option><option>M2K</option><option>Sonstiges</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Richtung</label>
+          <select id="f_direction">
+            <option value="long">Long</option>
+            <option value="short">Short</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid3" style="grid-template-columns: 1fr 1fr 1fr;">
+        <div>
+          <label class="field-label">P/L in USD</label>
+          <input type="number" step="0.01" id="f_pnl" placeholder="125.00 oder -80.00" required>
+        </div>
+        <div>
+          <label class="field-label">Kontrakte</label>
+          <input type="number" step="1" min="1" id="f_size" value="1">
+        </div>
+        <div>
+          <label class="field-label">RR (Risk/Reward)</label>
+          <input type="number" step="0.01" id="f_rr" placeholder="z.B. 2.5 oder -1">
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label class="field-label">Fotos</label>
+        <input type="file" id="f_photos" accept="image/*" multiple>
+        <div class="photo-input-hint">Screenshots vom Trade (Chart, Setup...). Werden im Kalender angezeigt.</div>
+        <div class="photo-thumb-row" id="f_photos_preview"></div>
+      </div>
+
+      <div class="form-grid3" style="grid-template-columns: 1fr 1fr;">
+        <div>
+          <label class="field-label">Setup / Tag</label>
+          <input list="tagSuggestions" id="f_tag" placeholder="z.B. Breakout, Pullback...">
+          <datalist id="tagSuggestions"></datalist>
+        </div>
+        <div>
+          <label class="field-label">Emotion / Zustand</label>
+          <select id="f_emotion">
+            <option value="">—</option>
+            <option value="ruhig">Ruhig & fokussiert</option>
+            <option value="ungeduldig">Ungeduldig</option>
+            <option value="unsicher">Unsicher</option>
+            <option value="revenge">Revenge Trade</option>
+            <option value="ueberzeugt">Überzeugt vom Setup</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin: 12px 0 14px;">
+        <label class="field-label">Notizen</label>
+        <textarea id="f_notes" rows="2" placeholder="Setup, Grund für Ein-/Ausstieg, Learnings..."></textarea>
+      </div>
+
+      <div class="error-msg" id="formError" style="display:none;"></div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn">Speichern</button>
+        <button type="button" class="btn-ghost" id="cancelFormBtn">Abbrechen</button>
+      </div>
+    </form>
+
+    <div class="filter-row" id="tagFilterRow"></div>
+
+    <div id="emptyState" class="empty-state" style="display:none;">Noch keine Trades eingetragen.</div>
+
+    <div class="table-wrap" id="tableWrap" style="display:none;">
+      <table>
+        <thead>
+          <tr>
+            <th>Datum</th><th>Instr.</th><th>Seite</th><th>Tag</th>
+            <th style="text-align:right;">P/L</th><th style="text-align:right;">RR</th><th>Notizen</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-calendar">
+    <div class="cal-header">
+      <div class="cal-nav">
+        <button id="calPrev">‹</button>
+        <div class="cal-month-label" id="calMonthLabel">—</div>
+        <button id="calNext">›</button>
+      </div>
+      <div class="cal-month-total" id="calMonthTotal">—</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span><span class="legend-swatch" style="background:var(--green-dim); border:1px solid #2C6B50;"></span>Gewinntag</span>
+      <span><span class="legend-swatch" style="background:var(--red-dim); border:1px solid #7A3336;"></span>Verlusttag</span>
+      <span><span class="legend-swatch" style="background:#1A2029; border:1px solid var(--border2);"></span>Break-even</span>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-stats">
+    <div class="stat-block">
+      <div class="section-title">Equity-Kurve</div>
+      <div id="equityChartWrap"></div>
+    </div>
+
+    <div class="stat-block">
+      <div class="section-title">Streaks</div>
+      <div class="streak-row">
+        <div class="stat-card"><div class="stat-label">Aktuelle Serie</div><div class="stat-value" id="statCurrentStreak">—</div></div>
+        <div class="stat-card"><div class="stat-label">Beste Gewinnserie</div><div class="stat-value" id="statBestWinStreak" style="color:var(--green)">—</div></div>
+        <div class="stat-card"><div class="stat-label">Längste Verlustserie</div><div class="stat-value" id="statWorstLossStreak" style="color:var(--red)">—</div></div>
+        <div class="stat-card"><div class="stat-label">Bester Trade</div><div class="stat-value" id="statBestTrade" style="color:var(--green)">—</div></div>
+      </div>
+    </div>
+
+    <div class="stat-block">
+      <div class="section-title">Performance nach Setup / Tag</div>
+      <div id="tagStatsWrap"></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-regeln">
+    <div class="form-panel open" style="margin-bottom:18px;">
+      <div class="section-title" style="margin-bottom:14px;">Neue Strategie / Regel</div>
+      <div style="margin-bottom:12px;">
+        <label class="field-label">Strategie</label>
+        <input type="text" id="r_name" placeholder="z.B. AMD Setup, FVG Retest...">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label class="field-label">Einstiegsregeln</label>
+        <textarea id="r_entry" rows="3" placeholder="Wann/wie steige ich ein..."></textarea>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label class="field-label">Confirmation</label>
+        <textarea id="r_confirmation" rows="3" placeholder="Welche Bestätigung muss vorliegen..."></textarea>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label class="field-label">TP-Regel</label>
+        <textarea id="r_tp" rows="2" placeholder="Wo/wie setze ich den Take-Profit..."></textarea>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label class="field-label">SL-Regel</label>
+        <textarea id="r_sl" rows="2" placeholder="Wo/wie setze ich den Stop-Loss..."></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn" id="ruleSaveBtn">Speichern</button>
+        <button type="button" class="btn-ghost" id="ruleCancelBtn" style="display:none;">Bearbeitung abbrechen</button>
+      </div>
+      <input type="hidden" id="r_editId" value="">
+    </div>
+    <div id="rulesEmptyState" class="empty-state" style="display:none;">Noch keine Strategien/Regeln eingetragen.</div>
+    <div id="rulesList"></div>
+  </div>
+
+  <div class="footer-note">Daten werden lokal gespeichert. Regelmäßiges Backup wird empfohlen.</div>
+</div>
+
+<div id="photoModal">
+  <div class="photo-modal-inner">
+    <div class="photo-modal-header">
+      <div class="photo-modal-title" id="photoModalTitle">Fotos</div>
+      <button class="photo-modal-close" id="photoModalCloseBtn">✕</button>
+    </div>
+    <div id="photoModalBody"></div>
+  </div>
+</div>
+<div class="equity-tooltip" id="equityTooltip"></div>
+
+<script>
+  const STORAGE_KEY = "trading_journal_entries_v1";
+  const RISK_KEY = "trading_journal_risk_limit_v1";
+  const RULES_KEY = "trading_journal_rules_v1";
+  let storageAvailable = true;
+  let pendingPhotos = [];
+
+  function testStorage() {
+    try { const k = "__tj_test__"; localStorage.setItem(k, "1"); localStorage.removeItem(k); return true; }
+    catch (e) { return false; }
+  }
+  function showStorageBanner(msg) {
+    const el = document.getElementById("storageBanner");
+    el.textContent = msg; el.style.display = "block";
+  }
+  storageAvailable = testStorage();
+  if (!storageAvailable) {
+    showStorageBanner("⚠ Der Browser blockiert lokalen Speicher für diese Datei. Deine Einträge bleiben nur bis zum Schließen erhalten. Nutze 'JSON-Backup', um sie zu sichern.");
+  }
+
+  function loadEntries() {
+    if (!storageAvailable) return [];
+    try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }
+    catch (e) { return []; }
+  }
+  function saveEntries(list) {
+    entries = list;
+    if (!storageAvailable) return false;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); return true; }
+    catch (e) { storageAvailable = false; showStorageBanner("⚠ Speichern fehlgeschlagen. Bitte Backup exportieren."); return false; }
+  }
+  function loadRiskLimit() {
+    if (!storageAvailable) return null;
+    try { const raw = localStorage.getItem(RISK_KEY); return raw ? parseFloat(raw) : null; }
+    catch (e) { return null; }
+  }
+  function saveRiskLimit(val) {
+    riskLimit = val;
+    if (!storageAvailable) return;
+    try {
+      if (val === null) localStorage.removeItem(RISK_KEY);
+      else localStorage.setItem(RISK_KEY, String(val));
+    } catch (e) {}
+  }
+
+  function loadRules() {
+    if (!storageAvailable) return [];
+    try { const raw = localStorage.getItem(RULES_KEY); return raw ? JSON.parse(raw) : []; }
+    catch (e) { return []; }
+  }
+  function saveRules(list) {
+    rules = list;
+    if (!storageAvailable) return false;
+    try { localStorage.setItem(RULES_KEY, JSON.stringify(list)); return true; }
+    catch (e) { return false; }
+  }
+
+  let entries = loadEntries();
+  let riskLimit = loadRiskLimit();
+  let rules = loadRules();
+  let activeTagFilter = null;
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function fmtMoney(n) { const v = Number(n) || 0; return v.toLocaleString("de-DE", { style: "currency", currency: "USD" }); }
+  function fmtDate(iso) { const d = new Date(iso); return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }); }
+  function todayStr() { return new Date().toISOString().slice(0,10); }
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderPhotoPreview() {
+    const wrap = document.getElementById("f_photos_preview");
+    wrap.innerHTML = "";
+    pendingPhotos.forEach((dataUrl, idx) => {
+      const el = document.createElement("div");
+      el.className = "photo-thumb-wrap";
+      el.innerHTML = `<img class="photo-thumb" src="${dataUrl}"><button type="button" class="photo-thumb-remove" data-idx="${idx}">✕</button>`;
+      wrap.appendChild(el);
+    });
+    wrap.querySelectorAll(".photo-thumb-remove").forEach(btn => {
+      btn.addEventListener("click", () => {
+        pendingPhotos.splice(parseInt(btn.dataset.idx), 1);
+        renderPhotoPreview();
+      });
+    });
+  }
+
+  document.getElementById("f_photos").addEventListener("change", async (e) => {
+    const files = Array.from(e.target.files || []);
+    for (const file of files) {
+      try { pendingPhotos.push(await fileToDataUrl(file)); } catch (err) {}
+    }
+    e.target.value = "";
+    renderPhotoPreview();
+  });
+
+  function openPhotoModal(title, groups) {
+    document.getElementById("photoModalTitle").textContent = title;
+    const body = document.getElementById("photoModalBody");
+    body.innerHTML = "";
+    groups.forEach(g => {
+      const block = document.createElement("div");
+      block.className = "photo-modal-entry";
+      block.innerHTML = `<div class="photo-modal-entry-label">${g.label}</div><div class="photo-modal-grid">${g.photos.map(p => `<img src="${p}">`).join("")}</div>`;
+      body.appendChild(block);
+    });
+    document.getElementById("photoModal").classList.add("open");
+  }
+  document.getElementById("photoModalCloseBtn").addEventListener("click", () => {
+    document.getElementById("photoModal").classList.remove("open");
+  });
+  document.getElementById("photoModal").addEventListener("click", (e) => {
+    if (e.target.id === "photoModal") document.getElementById("photoModal").classList.remove("open");
+  });
+
+  function renderRiskGuard() {
+    const todayPnl = entries.filter(e => e.date === todayStr()).reduce((s, e) => s + e.pnl, 0);
+    const valueEl = document.getElementById("riskbarValue");
+    const fillEl = document.getElementById("riskbarFill");
+    const msgEl = document.getElementById("riskbarMsg");
+    const wrap = document.getElementById("riskbarWrap");
+
+    if (riskLimit === null || isNaN(riskLimit)) {
+      valueEl.textContent = "nicht gesetzt";
+      valueEl.style.color = "var(--text-mute)";
+      fillEl.style.width = "0%";
+      fillEl.style.background = "var(--border2)";
+      msgEl.textContent = "Setze ein Tagesverlustlimit, z.B. passend zu deiner Topstep-Combine-Regel.";
+      msgEl.style.color = "var(--text-faint)";
+      wrap.style.borderColor = "var(--border)";
+      return;
+    }
+
+    const loss = todayPnl < 0 ? Math.abs(todayPnl) : 0;
+    const pct = Math.min(100, (loss / riskLimit) * 100);
+    valueEl.textContent = `${fmtMoney(-loss)} / -${fmtMoney(riskLimit).replace('-','')}`;
+
+    let color = "var(--green)";
+    let msg = `Heutiger P/L: ${fmtMoney(todayPnl)}. Noch ${fmtMoney(riskLimit - loss)} Puffer bis zum Limit.`;
+    let borderColor = "var(--border)";
+
+    if (pct >= 100) {
+      color = "var(--red)";
+      msg = "⚠ Tagesverlustlimit erreicht oder überschritten. Trading für heute beenden.";
+      borderColor = "var(--red)";
+    } else if (pct >= 70) {
+      color = "var(--amber)";
+      msg = `⚠ Achtung: ${pct.toFixed(0)}% des Tageslimits erreicht. Vorsicht bei weiteren Trades.`;
+      borderColor = "var(--amber)";
+    }
+
+    valueEl.style.color = color;
+    fillEl.style.width = pct + "%";
+    fillEl.style.background = color;
+    msgEl.textContent = msg;
+    msgEl.style.color = color;
+    wrap.style.borderColor = borderColor;
+  }
+
+  document.getElementById("riskToggleBtn").addEventListener("click", () => {
+    const panel = document.getElementById("riskEditPanel");
+    const open = panel.style.display !== "none";
+    panel.style.display = open ? "none" : "flex";
+    if (!open) document.getElementById("riskLimitInput").value = riskLimit !== null ? riskLimit : "";
+  });
+  document.getElementById("riskSaveBtn").addEventListener("click", () => {
+    const val = parseFloat(document.getElementById("riskLimitInput").value);
+    if (!isNaN(val) && val > 0) {
+      saveRiskLimit(val);
+      document.getElementById("riskEditPanel").style.display = "none";
+      renderRiskGuard();
+    }
+  });
+  document.getElementById("riskClearBtn").addEventListener("click", () => {
+    saveRiskLimit(null);
+    document.getElementById("riskEditPanel").style.display = "none";
+    renderRiskGuard();
+  });
+
+  function getAllTags() {
+    const set = new Set();
+    entries.forEach(e => { if (e.tag) set.add(e.tag); });
+    return [...set].sort();
+  }
+  function renderTagSuggestions() {
+    const dl = document.getElementById("tagSuggestions");
+    dl.innerHTML = "";
+    ["Breakout","Pullback","Reversal","Range","News","Trendfolge", ...getAllTags()].filter((v,i,a)=>a.indexOf(v)===i).forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t;
+      dl.appendChild(opt);
+    });
+  }
+  function renderTagFilters() {
+    const row = document.getElementById("tagFilterRow");
+    const tags = getAllTags();
+    row.innerHTML = "";
+    if (tags.length === 0) return;
+    const allChip = document.createElement("button");
+    allChip.type = "button";
+    allChip.className = "tag-chip" + (activeTagFilter === null ? " active" : "");
+    allChip.textContent = "Alle";
+    allChip.addEventListener("click", () => { activeTagFilter = null; renderJournal(); });
+    row.appendChild(allChip);
+    tags.forEach(tag => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "tag-chip" + (activeTagFilter === tag ? " active" : "");
+      chip.textContent = tag;
+      chip.addEventListener("click", () => { activeTagFilter = (activeTagFilter === tag ? null : tag); renderJournal(); });
+      row.appendChild(chip);
+    });
+  }
+
+  function renderJournal() {
+    const total = entries.reduce((s, e) => s + e.pnl, 0);
+    document.getElementById("totalPnl").textContent = entries.length ? fmtMoney(total) : "—";
+
+    const wins = entries.filter(e => e.pnl > 0);
+    const losses = entries.filter(e => e.pnl < 0);
+    const winRate = entries.length ? (wins.length / entries.length) * 100 : 0;
+    const avgWin = wins.length ? wins.reduce((s, e) => s + e.pnl, 0) / wins.length : null;
+    const avgLoss = losses.length ? losses.reduce((s, e) => s + e.pnl, 0) / losses.length : null;
+
+    document.getElementById("statCount").textContent = entries.length;
+    document.getElementById("statWinrate").textContent = entries.length ? winRate.toFixed(0) + "%" : "—";
+    document.getElementById("statAvgWin").textContent = avgWin !== null ? fmtMoney(avgWin) : "—";
+    document.getElementById("statAvgLoss").textContent = avgLoss !== null ? fmtMoney(avgLoss) : "—";
+    const withRR = entries.filter(e => e.rr !== null && e.rr !== undefined && !isNaN(e.rr));
+    const avgRR = withRR.length ? withRR.reduce((s, e) => s + e.rr, 0) / withRR.length : null;
+    document.getElementById("statAvgRR").textContent = avgRR !== null ? (avgRR > 0 ? "+" : "") + avgRR.toFixed(2) + "R" : "—";
+
+    renderTagSuggestions();
+    renderTagFilters();
+
+    let filtered = activeTagFilter ? entries.filter(e => e.tag === activeTagFilter) : entries;
+    const sorted = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date) || b.createdAt - a.createdAt);
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    if (sorted.length === 0) {
+      document.getElementById("emptyState").style.display = "block";
+      document.getElementById("tableWrap").style.display = "none";
+    } else {
+      document.getElementById("emptyState").style.display = "none";
+      document.getElementById("tableWrap").style.display = "block";
+      sorted.forEach(e => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${fmtDate(e.date)}</td>
+          <td class="mono">${e.instrument}</td>
+          <td class="${e.direction === 'long' ? 'dir-long' : 'dir-short'}">${e.direction === 'long' ? 'Long' : 'Short'}</td>
+          <td>${e.tag ? `<span class="tag-pill">${e.tag.replace(/</g,"&lt;")}</span>` : ""}${e.photos && e.photos.length ? `<span class="row-photo-icon" data-photo-id="${e.id}" title="Fotos ansehen">📷</span>` : ""}</td>
+          <td style="text-align:right;" class="mono ${e.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}">${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}</td>
+          <td style="text-align:right;" class="mono">${(e.rr === null || e.rr === undefined || e.rr === "") ? "—" : (e.rr > 0 ? "+" : "") + e.rr + "R"}</td>
+          <td class="notes-cell">${e.notes ? e.notes.replace(/</g, "&lt;") : ""}</td>
+          <td><button class="btn-icon" data-id="${e.id}" title="Löschen">✕</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+      tbody.querySelectorAll(".btn-icon").forEach(btn => {
+        btn.addEventListener("click", () => {
+          saveEntries(entries.filter(e => e.id !== btn.dataset.id));
+          renderAll();
+        });
+      });
+      tbody.querySelectorAll(".row-photo-icon").forEach(icon => {
+        icon.addEventListener("click", () => {
+          const e = entries.find(x => x.id === icon.dataset.photoId);
+          if (!e) return;
+          openPhotoModal(fmtDate(e.date), [{ label: `${e.instrument} · ${e.direction === 'long' ? 'Long' : 'Short'} · ${fmtMoney(e.pnl)}`, photos: e.photos }]);
+        });
+      });
+    }
+  }
+
+  let calYear = new Date().getFullYear();
+  let calMonth = new Date().getMonth();
+  const DOW_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+  const MONTH_LABELS = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+
+  function renderCalendar() {
+    document.getElementById("calMonthLabel").textContent = `${MONTH_LABELS[calMonth]} ${calYear}`;
+    const dayMap = {};
+    entries.forEach(e => {
+      const d = new Date(e.date + "T00:00:00");
+      if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
+        const key = e.date;
+        if (!dayMap[key]) dayMap[key] = { pnl: 0, count: 0, photoEntries: [] };
+        dayMap[key].pnl += e.pnl;
+        dayMap[key].count += 1;
+        if (e.photos && e.photos.length) dayMap[key].photoEntries.push(e);
+      }
+    });
+    const monthTotal = Object.values(dayMap).reduce((s, d) => s + d.pnl, 0);
+    const totalEl = document.getElementById("calMonthTotal");
+    totalEl.textContent = Object.keys(dayMap).length ? fmtMoney(monthTotal) : "—";
+    totalEl.style.color = monthTotal > 0 ? "var(--green)" : monthTotal < 0 ? "var(--red)" : "var(--text-dim)";
+
+    const grid = document.getElementById("calGrid");
+    grid.innerHTML = "";
+    DOW_LABELS.forEach(l => { const el = document.createElement("div"); el.className = "cal-dow"; el.textContent = l; grid.appendChild(el); });
+
+    const firstOfMonth = new Date(calYear, calMonth, 1);
+    let leadingBlanks = (firstOfMonth.getDay() + 6) % 7;
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    for (let i = 0; i < leadingBlanks; i++) { const el = document.createElement("div"); el.className = "cal-cell empty"; grid.appendChild(el); }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const key = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const data = dayMap[key];
+      const cell = document.createElement("div");
+      cell.className = "cal-cell";
+      if (data) cell.classList.add(data.pnl > 0 ? "win" : data.pnl < 0 ? "loss" : "flat");
+      let inner = `<div class="cal-daynum">${day}</div>`;
+      if (data) {
+        inner += `<div class="cal-pnl">${data.pnl >= 0 ? "+" : ""}${fmtMoney(data.pnl)}</div>`;
+        inner += `<div class="cal-trades">${data.count} Trade${data.count > 1 ? "s" : ""}</div>`;
+        if (data.photoEntries.length) inner += `<span class="cal-photo-icon" title="Fotos ansehen">📷</span>`;
+      }
+      cell.innerHTML = inner;
+      if (data && data.photoEntries.length) {
+        cell.querySelector(".cal-photo-icon").addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          openPhotoModal(fmtDate(key), data.photoEntries.map(e => ({
+            label: `${e.instrument} · ${e.direction === 'long' ? 'Long' : 'Short'} · ${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}`,
+            photos: e.photos
+          })));
+        });
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderEquityChart() {
+    const wrap = document.getElementById("equityChartWrap");
+    if (entries.length === 0) {
+      wrap.innerHTML = `<div class="empty-state" style="padding:24px 0;">Noch keine Trades für eine Equity-Kurve.</div>`;
+      return;
+    }
+    const sorted = [...entries].sort((a,b) => new Date(a.date) - new Date(b.date) || a.createdAt - b.createdAt);
+    let cum = 0;
+    const points = sorted.map(e => { cum += e.pnl; return cum; });
+    const w = 880, h = 220, pad = 30;
+    const min = Math.min(0, ...points);
+    const max = Math.max(0, ...points);
+    const range = (max - min) || 1;
+    const stepX = points.length > 1 ? (w - pad*2) / (points.length - 1) : 0;
+    const toY = (v) => h - pad - ((v - min) / range) * (h - pad*2);
+    const toX = (i) => pad + i * stepX;
+
+    const zeroY = toY(0);
+    const linePath = points.map((v,i) => `${i===0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`).join(' ');
+    const areaPath = `${linePath} L ${toX(points.length-1).toFixed(1)} ${zeroY.toFixed(1)} L ${toX(0).toFixed(1)} ${zeroY.toFixed(1)} Z`;
+    const finalVal = points[points.length-1];
+    const lineColor = finalVal >= 0 ? "#3FB68B" : "#E0575B";
+
+    const dots = sorted.map((e, i) => {
+      const isWin = e.pnl > 0;
+      const dotColor = isWin ? "#3FB68B" : e.pnl < 0 ? "#E0575B" : "#7C8792";
+      return `<circle class="eq-dot" data-idx="${i}" cx="${toX(i).toFixed(1)}" cy="${toY(points[i]).toFixed(1)}" r="8" fill="transparent" stroke="none" />`;
+    }).join('');
+    const visibleDots = sorted.map((e, i) => {
+      const dotColor = e.pnl > 0 ? "#3FB68B" : e.pnl < 0 ? "#E0575B" : "#7C8792";
+      return `<circle cx="${toX(i).toFixed(1)}" cy="${toY(points[i]).toFixed(1)}" r="2.5" fill="${dotColor}" />`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:auto; display:block;">
+        <line x1="${pad}" y1="${zeroY.toFixed(1)}" x2="${w-pad}" y2="${zeroY.toFixed(1)}" stroke="#232B34" stroke-width="1" stroke-dasharray="4 4" />
+        <path d="${areaPath}" fill="${lineColor}" opacity="0.12" stroke="none" />
+        <path d="${linePath}" fill="none" stroke="${lineColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+        ${visibleDots}
+        ${dots}
+      </svg>
+      <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-mute); margin-top:6px;">
+        <span>Start</span>
+        <span>${points.length} Trade${points.length>1?'s':''} · Endstand: <b class="mono" style="color:${lineColor}">${fmtMoney(finalVal)}</b></span>
+      </div>
+    `;
+
+    const tooltip = document.getElementById("equityTooltip");
+    wrap.querySelectorAll(".eq-dot").forEach(dot => {
+      const e = sorted[parseInt(dot.dataset.idx)];
+      const positionTooltip = () => {
+        const dotRect = dot.getBoundingClientRect();
+        const dotCenterX = dotRect.left + dotRect.width / 2;
+        const dotCenterY = dotRect.top + dotRect.height / 2;
+        tooltip.style.display = "block";
+        const tipRect = tooltip.getBoundingClientRect();
+        let left = dotCenterX - tipRect.width / 2;
+        left = Math.max(4, Math.min(left, window.innerWidth - tipRect.width - 4));
+        let top = dotCenterY - tipRect.height - 10;
+        if (top < 4) top = dotCenterY + 12;
+        tooltip.style.left = left + "px";
+        tooltip.style.top = top + "px";
+      };
+      dot.addEventListener("mouseenter", () => {
+        tooltip.innerHTML = `${fmtDate(e.date)} · ${e.instrument}<br><span style="color:${e.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}</span>`;
+        positionTooltip();
+      });
+      dot.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+    });
+  }
+
+  function renderStreaks() {
+    const sorted = [...entries].sort((a,b) => new Date(a.date) - new Date(b.date) || a.createdAt - b.createdAt);
+    let currentStreak = 0, currentType = null;
+    let bestWin = 0, worstLoss = 0, runWin = 0, runLoss = 0;
+    let bestWinRange = null, worstLossRange = null, runWinStart = null, runLossStart = null;
+
+    sorted.forEach(e => {
+      const isWin = e.pnl > 0;
+      const isLoss = e.pnl < 0;
+      if (isWin) {
+        if (runWin === 0) runWinStart = e.date;
+        runWin += 1; runLoss = 0;
+        if (runWin > bestWin) { bestWin = runWin; bestWinRange = [runWinStart, e.date]; }
+      } else if (isLoss) {
+        if (runLoss === 0) runLossStart = e.date;
+        runLoss += 1; runWin = 0;
+        if (runLoss > worstLoss) { worstLoss = runLoss; worstLossRange = [runLossStart, e.date]; }
+      } else { runWin = 0; runLoss = 0; }
+    });
+
+    let currentRange = null;
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      const e = sorted[i];
+      const type = e.pnl > 0 ? "win" : e.pnl < 0 ? "loss" : "flat";
+      if (currentType === null) {
+        currentType = type;
+        if (type !== "flat") { currentStreak = 1; currentRange = [e.date, e.date]; } else break;
+      } else if (type === currentType) { currentStreak += 1; currentRange[0] = e.date; }
+      else break;
+    }
+
+    const fmtRange = (r) => r[0] === r[1] ? fmtDate(r[0]) : `${fmtDate(r[0])} – ${fmtDate(r[1])}`;
+
+    const currentEl = document.getElementById("statCurrentStreak");
+    if (sorted.length === 0 || currentType === "flat" || currentType === null) {
+      currentEl.textContent = "—";
+      currentEl.style.color = "var(--text)";
+      currentEl.title = "";
+    } else {
+      currentEl.textContent = `${currentStreak} ${currentType === "win" ? "Gewinn(e)" : "Verlust(e)"} in Folge`;
+      currentEl.style.color = currentType === "win" ? "var(--green)" : "var(--red)";
+      currentEl.title = fmtRange(currentRange);
+    }
+
+    const bestWinEl = document.getElementById("statBestWinStreak");
+    const worstLossEl = document.getElementById("statWorstLossStreak");
+    bestWinEl.textContent = sorted.length ? bestWin : "—";
+    bestWinEl.title = bestWinRange ? fmtRange(bestWinRange) : "";
+    worstLossEl.textContent = sorted.length ? worstLoss : "—";
+    worstLossEl.title = worstLossRange ? fmtRange(worstLossRange) : "";
+
+    const best = entries.reduce((m, e) => e.pnl > m.pnl ? e : m, entries.length ? entries[0] : { pnl: -Infinity });
+    const bestTradeEl = document.getElementById("statBestTrade");
+    bestTradeEl.textContent = entries.length ? fmtMoney(best.pnl) : "—";
+    bestTradeEl.title = entries.length ? `${fmtDate(best.date)} · ${best.instrument}` : "";
+  }
+
+  function renderTagStats() {
+    const wrap = document.getElementById("tagStatsWrap");
+    const tags = getAllTags();
+    if (tags.length === 0) {
+      wrap.innerHTML = `<div class="empty-state" style="padding:20px 0;">Noch keine Setup-Tags vergeben. Trage bei neuen Trades ein "Setup / Tag" ein, um hier eine Auswertung zu sehen.</div>`;
+      return;
+    }
+    const rows = tags.map(tag => {
+      const list = entries.filter(e => e.tag === tag);
+      const total = list.reduce((s,e) => s + e.pnl, 0);
+      const wins = list.filter(e => e.pnl > 0).length;
+      const winRate = list.length ? (wins / list.length) * 100 : 0;
+      return { tag, count: list.length, total, winRate };
+    }).sort((a,b) => b.total - a.total);
+
+    let html = `<table class="tag-table"><thead><tr>
+      <th>Setup</th><th>Trades</th><th>Winrate</th><th style="text-align:right;">P/L gesamt</th>
+    </tr></thead><tbody>`;
+    rows.forEach(r => {
+      html += `<tr>
+        <td><span class="tag-pill">${r.tag.replace(/</g,"&lt;")}</span></td>
+        <td>${r.count}</td>
+        <td>${r.winRate.toFixed(0)}%</td>
+        <td style="text-align:right;" class="mono ${r.total >= 0 ? 'pnl-pos' : 'pnl-neg'}">${r.total >= 0 ? '+' : ''}${fmtMoney(r.total)}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    wrap.innerHTML = html;
+  }
+
+  function renderStats() {
+    renderEquityChart();
+    renderStreaks();
+    renderTagStats();
+  }
+
+  const CHECKLIST_FIELDS = [
+    { key: "entry", label: "Einstiegsregeln", ruleKey: "entry" },
+    { key: "confirmation", label: "Confirmation", ruleKey: "confirmation" },
+    { key: "tp", label: "TP-Regel", ruleKey: "tp" },
+    { key: "sl", label: "SL-Regel", ruleKey: "sl" },
+  ];
+
+  function renderRules() {
+    const wrap = document.getElementById("rulesList");
+    const emptyEl = document.getElementById("rulesEmptyState");
+    wrap.innerHTML = "";
+    if (rules.length === 0) { emptyEl.style.display = "block"; return; }
+    emptyEl.style.display = "none";
+    [...rules].sort((a,b) => b.createdAt - a.createdAt).forEach(r => {
+      const card = document.createElement("div");
+      card.className = "rule-card";
+      const checklist = r.checklist || {};
+      const fieldsHtml = CHECKLIST_FIELDS.map(f => r[f.ruleKey] ? `
+        <div class="rule-field-block">
+          <div class="rule-field-label">${f.label}</div>
+          <div class="rule-text">${r[f.ruleKey].replace(/</g,"&lt;")}</div>
+        </div>` : "").join("");
+      const checklistItemsHtml = CHECKLIST_FIELDS.filter(f => r[f.ruleKey]).map(f => `
+        <label class="checklist-item ${checklist[f.key] ? 'done' : ''}">
+          <input type="checkbox" data-rule="${r.id}" data-field="${f.key}" ${checklist[f.key] ? 'checked' : ''}>
+          <span class="checklist-item-text"><b>${f.label}:</b> ${r[f.ruleKey].replace(/</g,"&lt;")}</span>
+        </label>`).join("");
+      const activeFields = CHECKLIST_FIELDS.filter(f => r[f.ruleKey]);
+      const allChecked = activeFields.length > 0 && activeFields.every(f => checklist[f.key]);
+      card.innerHTML = `
+        <div class="rule-card-top">
+          <div class="rule-name">${r.name.replace(/</g,"&lt;")}</div>
+          <div class="rule-actions">
+            <button class="btn-ghost btn-sm" data-edit="${r.id}">Bearbeiten</button>
+            <button class="btn-icon" data-delete="${r.id}" title="Löschen">✕</button>
+          </div>
+        </div>
+        ${fieldsHtml}
+        ${activeFields.length ? `
+        <div class="checklist-block">
+          <div class="checklist-title">Vor dem Trade abhaken</div>
+          ${checklistItemsHtml}
+          <div class="checklist-ready ${allChecked ? 'yes' : 'no'}">${allChecked ? '✓ Bereit für den Trade' : 'Noch nicht alle Punkte abgehakt'}</div>
+          <button type="button" class="checklist-reset" data-reset="${r.id}">Checkliste zurücksetzen</button>
+        </div>` : ""}
+      `;
+      wrap.appendChild(card);
+    });
+    wrap.querySelectorAll("[data-delete]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        saveRules(rules.filter(r => r.id !== btn.dataset.delete));
+        renderRules();
+      });
+    });
+    wrap.querySelectorAll("[data-edit]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const r = rules.find(x => x.id === btn.dataset.edit);
+        if (!r) return;
+        document.getElementById("r_name").value = r.name;
+        document.getElementById("r_entry").value = r.entry || "";
+        document.getElementById("r_confirmation").value = r.confirmation || "";
+        document.getElementById("r_tp").value = r.tp || "";
+        document.getElementById("r_sl").value = r.sl || "";
+        document.getElementById("r_editId").value = r.id;
+        document.getElementById("ruleCancelBtn").style.display = "inline-block";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+    wrap.querySelectorAll("[data-reset]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        saveRules(rules.map(r => r.id === btn.dataset.reset ? { ...r, checklist: {} } : r));
+        renderRules();
+      });
+    });
+    wrap.querySelectorAll(".checklist-item input[type=checkbox]").forEach(cb => {
+      cb.addEventListener("change", () => {
+        saveRules(rules.map(r => {
+          if (r.id !== cb.dataset.rule) return r;
+          const checklist = { ...(r.checklist || {}) };
+          checklist[cb.dataset.field] = cb.checked;
+          return { ...r, checklist };
+        }));
+        renderRules();
+      });
+    });
+  }
+
+  function resetRuleForm() {
+    document.getElementById("r_name").value = "";
+    document.getElementById("r_entry").value = "";
+    document.getElementById("r_confirmation").value = "";
+    document.getElementById("r_tp").value = "";
+    document.getElementById("r_sl").value = "";
+    document.getElementById("r_editId").value = "";
+    document.getElementById("ruleCancelBtn").style.display = "none";
+  }
+
+  document.getElementById("ruleSaveBtn").addEventListener("click", () => {
+    const name = document.getElementById("r_name").value.trim();
+    const entry = document.getElementById("r_entry").value.trim();
+    const confirmation = document.getElementById("r_confirmation").value.trim();
+    const tp = document.getElementById("r_tp").value.trim();
+    const sl = document.getElementById("r_sl").value.trim();
+    if (!name || (!entry && !confirmation && !tp && !sl)) return;
+    const editId = document.getElementById("r_editId").value;
+    if (editId) {
+      saveRules(rules.map(r => r.id === editId ? { ...r, name, entry, confirmation, tp, sl } : r));
+    } else {
+      saveRules([...rules, { id: uid(), name, entry, confirmation, tp, sl, checklist: {}, createdAt: Date.now() }]);
+    }
+    resetRuleForm();
+    renderRules();
+  });
+  document.getElementById("ruleCancelBtn").addEventListener("click", resetRuleForm);
+
+  function renderAll() {
+    renderRiskGuard();
+    renderJournal();
+    renderCalendar();
+    renderStats();
+    renderRules();
+  }
+
+  function resetForm() {
+    document.getElementById("f_date").value = todayStr();
+    document.getElementById("f_instrument").value = "MES";
+    document.getElementById("f_direction").value = "long";
+    document.getElementById("f_size").value = "1";
+    document.getElementById("f_pnl").value = "";
+    document.getElementById("f_rr").value = "";
+    document.getElementById("f_notes").value = "";
+    document.getElementById("f_tag").value = "";
+    document.getElementById("f_emotion").value = "";
+    document.getElementById("formError").style.display = "none";
+    pendingPhotos = [];
+    renderPhotoPreview();
+  }
+
+  document.getElementById("f_date").value = todayStr();
+
+  document.getElementById("toggleFormBtn").addEventListener("click", () => {
+    document.getElementById("entryForm").classList.toggle("open");
+  });
+  document.getElementById("cancelFormBtn").addEventListener("click", () => {
+    document.getElementById("entryForm").classList.remove("open");
+    resetForm();
+  });
+  document.getElementById("entryForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById("formError");
+    errEl.style.display = "none";
+
+    const pnlValue = parseFloat(document.getElementById("f_pnl").value);
+    if (isNaN(pnlValue)) { errEl.textContent = "Bitte einen gültigen P/L-Betrag eingeben."; errEl.style.display = "block"; return; }
+
+    const dateVal = document.getElementById("f_date").value;
+    const rrRaw = document.getElementById("f_rr").value;
+    const rrValue = rrRaw === "" ? null : Math.round(parseFloat(rrRaw) * 100) / 100;
+
+    const newEntry = {
+      id: uid(),
+      date: dateVal,
+      instrument: document.getElementById("f_instrument").value,
+      direction: document.getElementById("f_direction").value,
+      size: parseFloat(document.getElementById("f_size").value) || 1,
+      pnl: Math.round(pnlValue * 100) / 100,
+      rr: (rrValue === null || isNaN(rrValue)) ? null : rrValue,
+      tag: document.getElementById("f_tag").value.trim(),
+      emotion: document.getElementById("f_emotion").value,
+      notes: document.getElementById("f_notes").value.trim(),
+      photos: [...pendingPhotos],
+      createdAt: Date.now(),
+    };
+
+    const ok = saveEntries([...entries, newEntry]);
+    const d = new Date(dateVal + "T00:00:00");
+    calYear = d.getFullYear(); calMonth = d.getMonth();
+
+    resetForm();
+    document.getElementById("entryForm").classList.remove("open");
+    renderAll();
+
+    if (!ok) { errEl.textContent = "Eintrag übernommen, aber nicht dauerhaft gespeichert. Bitte Backup exportieren."; errEl.style.display = "block"; }
+  });
+
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+      if (btn.dataset.tab === "calendar") renderCalendar();
+      if (btn.dataset.tab === "stats") renderStats();
+      if (btn.dataset.tab === "regeln") renderRules();
+    });
+  });
+
+  document.getElementById("calPrev").addEventListener("click", () => { calMonth -= 1; if (calMonth < 0) { calMonth = 11; calYear -= 1; } renderCalendar(); });
+  document.getElementById("calNext").addEventListener("click", () => { calMonth += 1; if (calMonth > 11) { calMonth = 0; calYear += 1; } renderCalendar(); });
+
+  document.getElementById("exportJsonBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(entries, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `trading-journal-backup-${todayStr()}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById("exportCsvBtn").addEventListener("click", () => {
+    const header = ["Datum","Instrument","Richtung","Kontrakte","Entry","Exit","P/L","RR","Tag","Emotion","Notizen"];
+    const rows = [...entries].sort((a,b)=> new Date(a.date)-new Date(b.date)).map(e => [
+      e.date, e.instrument, e.direction, e.size, e.entry ?? "", e.exit ?? "", e.pnl, e.rr ?? "",
+      (e.tag||"").replace(/;/g,","), (e.emotion||""), (e.notes||"").replace(/[\r\n;]+/g," ")
+    ]);
+    const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `trading-journal-export-${todayStr()}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById("importBtn").addEventListener("click", () => document.getElementById("fileImportInput").click());
+  document.getElementById("fileImportInput").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const imported = JSON.parse(evt.target.result);
+        if (!Array.isArray(imported)) throw new Error("invalid format");
+        const existingIds = new Set(entries.map(x => x.id));
+        const merged = [...entries];
+        imported.forEach(item => { if (item && item.id && !existingIds.has(item.id)) merged.push(item); });
+        saveEntries(merged);
+        renderAll();
+      } catch (err) { alert("Import fehlgeschlagen: Datei ist kein gültiges Journal-Backup."); }
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  renderAll();
+</script>
+</body>
+</html>
