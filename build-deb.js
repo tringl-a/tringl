@@ -1,5 +1,6 @@
 const installer = require('electron-installer-debian').default;
 const path = require('path');
+const pkg = require('./package.json');
 
 const options = {
   src: path.join(__dirname, 'dist/tradingjournal-linux-x64'),
@@ -8,7 +9,7 @@ const options = {
   name: 'tradingjournal',
   productName: 'Trading Journal',
   genericName: 'Trading Journal',
-  version: '1.0.0',
+  version: pkg.version,
   section: 'utils',
   priority: 'optional',
   maintainer: 'Trading Journal <noreply@example.com>',

@@ -7,7 +7,9 @@
   "scripts": {
     "start": "electron .",
     "serve": "npx serve app",
-    "package-win": "electron-packager . TradingJournal --platform=win32 --arch=x64 --icon=app/icon.ico --out=dist --overwrite --app-version=1.0.0"
+    "package-win": "electron-packager . TradingJournal --platform=win32 --arch=x64 --icon=app/icon.ico --out=dist --overwrite",
+    "package-linux": "electron-packager . tradingjournal --platform=linux --arch=x64 --icon=app/icon.png --out=dist --overwrite --ignore=\"^/(dist|docs|\\.github|README\\.md|build-deb\\.js)\"",
+    "build-deb": "npm run package-linux && node build-deb.js"
   },
   "keywords": [],
   "author": "",
