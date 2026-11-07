@@ -2,8 +2,17 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Trading Journal</title>
+<meta name="theme-color" content="#0B0F14">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Journal">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
   :root {
     --bg: #0B0F14;
@@ -182,6 +191,118 @@
 
   .equity-tooltip { position: fixed; background: #0F141A; border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: var(--text); pointer-events: none; display: none; white-space: nowrap; z-index: 200; font-family: 'Consolas', monospace; box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
   #equityChartWrap { position: relative; }
+  #equityChartWrap svg { touch-action: pan-y; }
+  .cal-pnl-short { display: none; }
+  .cal-cell.has-photos { cursor: pointer; }
+  .form-grid2 { grid-template-columns: 1fr 1fr; }
+
+  /* ---------- Responsive: Tablet / Handy ---------- */
+  @media (max-width: 600px) {
+    body { -webkit-text-size-adjust: 100%; }
+    #app {
+      padding: max(16px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    }
+    .header { align-items: flex-start; }
+    .header-actions { width: 100%; }
+    .header-actions .btn-ghost { flex: 1 1 0; padding-left: 6px; padding-right: 6px; justify-content: center; }
+    .header-actions .btn { flex: 1 1 100%; justify-content: center; order: -1; }
+
+    /* Tap-Ziele ≥ 44px; 16px Schrift verhindert Auto-Zoom auf iOS */
+    .btn, .btn-ghost, .btn-sm { min-height: 44px; font-size: 14px; }
+    input, select, textarea { font-size: 16px; min-height: 44px; padding: 10px 12px; }
+    input[type="file"] { padding: 8px; }
+    .btn-icon { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; font-size: 16px; }
+    .tag-chip { min-height: 36px; padding: 8px 14px; font-size: 12px; }
+    .risk-set-link, .checklist-reset { min-height: 36px; font-size: 12px; }
+    .risk-edit-row { flex-wrap: wrap; }
+    .risk-edit-row input { max-width: none; flex: 1 1 120px; }
+
+    .tabs { gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab-btn { flex: 1 0 auto; margin-right: 0; min-height: 44px; padding: 10px 8px; font-size: 14px; }
+
+    .stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stats .stat-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .streak-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-value { font-size: 16px; overflow-wrap: anywhere; }
+
+    .form-panel { padding: 14px; }
+    .form-grid3 { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-grid3 > :first-child { grid-column: 1 / -1; }
+    .form-grid3.form-grid2 { grid-template-columns: 1fr; }
+    .form-actions .btn, .form-actions .btn-ghost { flex: 1; justify-content: center; }
+    .photo-thumb { width: 64px; height: 64px; }
+    .photo-thumb-remove { width: 24px; height: 24px; font-size: 12px; line-height: 24px; top: -8px; right: -8px; }
+
+    /* Journal: Karte pro Trade statt Tabellenzeile */
+    #tableWrap { border: none; border-radius: 0; overflow: visible; }
+    #tableWrap thead { display: none; }
+    #tableWrap table, #tableWrap tbody { display: block; }
+    #tableWrap tbody tr {
+      display: grid;
+      grid-template-columns: auto auto auto 1fr auto auto;
+      grid-template-areas:
+        "date  date  date  date pnl del"
+        "instr side  rr    .    .   del"
+        "tag   tag   tag   tag  tag tag"
+        "notes notes notes notes notes notes";
+      align-items: center;
+      column-gap: 10px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 6px 10px 14px;
+      margin-bottom: 8px;
+    }
+    #tableWrap tbody td { padding: 2px 0; border: none; font-size: 13px; text-align: left !important; }
+    #tableWrap tbody td:empty { display: none; }
+    #tableWrap tbody td:nth-child(1) { grid-area: date; color: var(--text-dim); font-weight: 600; }
+    #tableWrap tbody td:nth-child(2) { grid-area: instr; }
+    #tableWrap tbody td:nth-child(3) { grid-area: side; }
+    #tableWrap tbody td:nth-child(4) { grid-area: tag; padding-top: 6px; }
+    #tableWrap tbody td:nth-child(5) { grid-area: pnl; font-size: 15px; text-align: right !important; }
+    #tableWrap tbody td:nth-child(6) { grid-area: rr; color: var(--text-mute); }
+    #tableWrap tbody td:nth-child(7) { grid-area: notes; max-width: none; white-space: normal; padding-top: 6px; }
+    #tableWrap tbody td:nth-child(8) { grid-area: del; align-self: start; }
+    .row-photo-icon { display: inline-block; padding: 4px 8px; font-size: 16px; }
+
+    /* Kalender kompakt */
+    .cal-header { flex-wrap: wrap; gap: 8px; }
+    .cal-nav { gap: 6px; }
+    .cal-nav button { width: 44px; height: 44px; font-size: 18px; }
+    .cal-month-label { min-width: 130px; font-size: 14px; }
+    .cal-grid { gap: 3px; }
+    .cal-cell { aspect-ratio: auto; min-height: 52px; padding: 3px 4px; border-radius: 5px; }
+    .cal-daynum { font-size: 10px; }
+    .cal-pnl { font-size: 10px; margin-top: 3px; letter-spacing: -0.02em; }
+    .cal-pnl-full { display: none; }
+    .cal-pnl-short { display: inline; }
+    .cal-trades { display: none; }
+    .cal-photo-icon { top: 2px; right: 3px; font-size: 10px; }
+    .cal-legend { flex-wrap: wrap; gap: 10px 14px; }
+
+    .stat-block { padding: 14px 12px; }
+    .tag-table th, .tag-table td { padding: 8px 6px; }
+    .rule-card { padding: 14px; }
+    .rule-card-top { flex-wrap: wrap; }
+    .checklist-item { padding: 10px 0; }
+    .checklist-item input[type="checkbox"] { width: 22px; height: 22px; min-height: 0; margin-top: -2px; }
+    .checklist-item-text { font-size: 13px; }
+
+    #photoModal { padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)); }
+    .photo-modal-inner { max-width: 100%; max-height: 92vh; max-height: 92dvh; padding: 14px; }
+    .photo-modal-close { min-width: 44px; min-height: 44px; font-size: 22px; }
+    .photo-modal-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 400px) {
+    .form-grid3 { grid-template-columns: 1fr; }
+    .stats, .streak-row { grid-template-columns: 1fr 1fr; }
+    .stat-card { padding: 10px; }
+    .stat-value { font-size: 15px; }
+    .header-actions .btn-ghost { font-size: 12px; }
+    .cal-pnl { font-size: 9px; }
+  }
 </style>
 </head>
 <body>
@@ -254,7 +375,7 @@
         </div>
       </div>
 
-      <div class="form-grid3" style="grid-template-columns: 1fr 1fr 1fr;">
+      <div class="form-grid3">
         <div>
           <label class="field-label">P/L in USD</label>
           <input type="number" step="0.01" id="f_pnl" placeholder="125.00 oder -80.00" required>
@@ -276,7 +397,7 @@
         <div class="photo-thumb-row" id="f_photos_preview"></div>
       </div>
 
-      <div class="form-grid3" style="grid-template-columns: 1fr 1fr;">
+      <div class="form-grid3 form-grid2">
         <div>
           <label class="field-label">Setup / Tag</label>
           <input list="tagSuggestions" id="f_tag" placeholder="z.B. Breakout, Pullback...">
@@ -477,6 +598,12 @@
   function fmtMoney(n) { const v = Number(n) || 0; return v.toLocaleString("de-DE", { style: "currency", currency: "USD" }); }
   function fmtDate(iso) { const d = new Date(iso); return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }); }
   function todayStr() { return new Date().toISOString().slice(0,10); }
+  // Kompaktes Format für schmale Kalenderzellen: +125 / -1,2k
+  function fmtMoneyShort(n) {
+    const v = Number(n) || 0, a = Math.abs(v), sign = v > 0 ? "+" : v < 0 ? "-" : "";
+    if (a >= 1000) return sign + (a / 1000).toLocaleString("de-DE", { maximumFractionDigits: a >= 10000 ? 0 : 1 }) + "k";
+    return sign + Math.round(a);
+  }
 
   function fileToDataUrl(file) {
     return new Promise((resolve, reject) => {
@@ -485,6 +612,25 @@
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+
+  // Große Fotos (z. B. Handykamera) verkleinern, damit localStorage (~5 MB) nicht sofort voll ist.
+  const PHOTO_MAX_DIM = 1600;
+  async function photoToDataUrl(file) {
+    const original = await fileToDataUrl(file);
+    if (file.size < 300 * 1024) return original;
+    try {
+      const img = await new Promise((resolve, reject) => {
+        const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = original;
+      });
+      const scale = Math.min(1, PHOTO_MAX_DIM / Math.max(img.naturalWidth, img.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.naturalWidth * scale);
+      canvas.height = Math.round(img.naturalHeight * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      const resized = canvas.toDataURL("image/jpeg", 0.82);
+      return resized.length < original.length ? resized : original;
+    } catch (e) { return original; }
   }
 
   function renderPhotoPreview() {
@@ -507,7 +653,7 @@
   document.getElementById("f_photos").addEventListener("change", async (e) => {
     const files = Array.from(e.target.files || []);
     for (const file of files) {
-      try { pendingPhotos.push(await fileToDataUrl(file)); } catch (err) {}
+      try { pendingPhotos.push(await photoToDataUrl(file)); } catch (err) {}
     }
     e.target.value = "";
     renderPhotoPreview();
@@ -523,6 +669,7 @@
       block.innerHTML = `<div class="photo-modal-entry-label">${g.label}</div><div class="photo-modal-grid">${g.photos.map(p => `<img src="${p}">`).join("")}</div>`;
       body.appendChild(block);
     });
+    document.getElementById("equityTooltip").style.display = "none";
     document.getElementById("photoModal").classList.add("open");
   }
   document.getElementById("photoModalCloseBtn").addEventListener("click", () => {
@@ -679,6 +826,7 @@
       });
       tbody.querySelectorAll(".btn-icon").forEach(btn => {
         btn.addEventListener("click", () => {
+          if (!confirm("Diesen Trade wirklich löschen?")) return;
           saveEntries(entries.filter(e => e.id !== btn.dataset.id));
           renderAll();
         });
@@ -733,13 +881,14 @@
       if (data) cell.classList.add(data.pnl > 0 ? "win" : data.pnl < 0 ? "loss" : "flat");
       let inner = `<div class="cal-daynum">${day}</div>`;
       if (data) {
-        inner += `<div class="cal-pnl">${data.pnl >= 0 ? "+" : ""}${fmtMoney(data.pnl)}</div>`;
+        inner += `<div class="cal-pnl"><span class="cal-pnl-full">${data.pnl >= 0 ? "+" : ""}${fmtMoney(data.pnl)}</span><span class="cal-pnl-short">${fmtMoneyShort(data.pnl)}</span></div>`;
         inner += `<div class="cal-trades">${data.count} Trade${data.count > 1 ? "s" : ""}</div>`;
         if (data.photoEntries.length) inner += `<span class="cal-photo-icon" title="Fotos ansehen">📷</span>`;
       }
       cell.innerHTML = inner;
       if (data && data.photoEntries.length) {
-        cell.querySelector(".cal-photo-icon").addEventListener("click", (ev) => {
+        cell.classList.add("has-photos");
+        cell.addEventListener("click", (ev) => {
           ev.stopPropagation();
           openPhotoModal(fmtDate(key), data.photoEntries.map(e => ({
             label: `${e.instrument} · ${e.direction === 'long' ? 'Long' : 'Short'} · ${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}`,
@@ -760,7 +909,10 @@
     const sorted = [...entries].sort((a,b) => new Date(a.date) - new Date(b.date) || a.createdAt - b.createdAt);
     let cum = 0;
     const points = sorted.map(e => { cum += e.pnl; return cum; });
-    const w = 880, h = 220, pad = 30;
+    // viewBox an die echte Breite anpassen, damit Linie/Punkte auf dem Handy nicht winzig werden
+    const availW = wrap.clientWidth;
+    const w = availW > 0 ? Math.max(280, Math.min(880, Math.round(availW))) : 880;
+    const h = w < 600 ? 200 : 220, pad = w < 600 ? 16 : 30;
     const min = Math.min(0, ...points);
     const max = Math.max(0, ...points);
     const range = (max - min) || 1;
@@ -819,8 +971,44 @@
         positionTooltip();
       });
       dot.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+      dot._showTip = () => {
+        tooltip.innerHTML = `${fmtDate(e.date)} · ${e.instrument}<br><span style="color:${e.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${e.pnl >= 0 ? '+' : ''}${fmtMoney(e.pnl)}</span>`;
+        positionTooltip();
+      };
     });
+
+    // Touch/Stift: nächstgelegenen Punkt zur Fingerposition anzeigen (Hover gibt es dort nicht)
+    const svg = wrap.querySelector("svg");
+    const dotEls = wrap.querySelectorAll(".eq-dot");
+    const showNearest = (ev) => {
+      if (ev.pointerType === "mouse") return;
+      const rect = svg.getBoundingClientRect();
+      const x = (ev.clientX - rect.left) * (w / rect.width);
+      const idx = stepX > 0 ? Math.max(0, Math.min(points.length - 1, Math.round((x - pad) / stepX))) : 0;
+      dotEls[idx]._showTip();
+    };
+    svg.addEventListener("pointerdown", showNearest);
+    svg.addEventListener("pointermove", showNearest);
   }
+
+  // Tooltip schließen bei Tippen außerhalb des Charts oder beim Scrollen
+  document.addEventListener("pointerdown", (ev) => {
+    if (ev.pointerType !== "mouse" && !ev.target.closest("#equityChartWrap svg")) document.getElementById("equityTooltip").style.display = "none";
+  });
+  window.addEventListener("scroll", () => { document.getElementById("equityTooltip").style.display = "none"; }, { passive: true });
+
+  // Bei Größen-/Ausrichtungswechsel Chart neu zeichnen
+  let resizeTimer = null, lastChartWidth = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const wrap = document.getElementById("equityChartWrap");
+      if (document.getElementById("tab-stats").classList.contains("active") && wrap.clientWidth !== lastChartWidth) {
+        lastChartWidth = wrap.clientWidth;
+        renderEquityChart();
+      }
+    }, 150);
+  });
 
   function renderStreaks() {
     const sorted = [...entries].sort((a,b) => new Date(a.date) - new Date(b.date) || a.createdAt - b.createdAt);
@@ -1104,6 +1292,7 @@
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      document.getElementById("equityTooltip").style.display = "none";
       btn.classList.add("active");
       document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
       if (btn.dataset.tab === "calendar") renderCalendar();
@@ -1160,6 +1349,13 @@
   });
 
   renderAll();
+
+  // PWA: Service Worker nur über http(s) registrieren – in Electron (file://) wird das übersprungen.
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
 </script>
 </body>
 </html>

@@ -1,11 +1,12 @@
 {
   "name": "tradingjournal",
   "productName": "Trading Journal",
-  "version": "1.4.0",
-  "description": "",
+  "version": "1.5.0",
+  "description": "Persönliches Trading-Journal – Desktop (Electron) und Handy (PWA)",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron .",
+    "serve": "npx serve app",
     "package-win": "electron-packager . TradingJournal --platform=win32 --arch=x64 --icon=app/icon.ico --out=dist --overwrite --app-version=1.0.0"
   },
   "keywords": [],
